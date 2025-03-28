@@ -1,0 +1,47 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+
+# Load your data and select starting from row 35000 (keeping the original index)
+train_set = pd.read_csv('Animated_Graphs/train_set.csv')
+train_set = train_set[40500:]  # This keeps the original index (e.g., 35000, 35001, ...)
+
+fig, ax = plt.subplots(figsize=(15, 5))
+
+# Create line objects with increased linewidths
+line_train, = ax.plot([], [], label='Train', color='blue', linewidth=6)
+line_pred, = ax.plot([], [], label='Train_Pred', color='red', linestyle='--', linewidth=2)
+
+def init():
+    line_train.set_data([], [])
+    line_pred.set_data([], [])
+    return line_train, line_pred
+
+def animate(i):
+    # Reveal i points. Note: the index starts at 35000
+    current_index = train_set.index[:i]
+    line_train.set_data(current_index, train_set['train'][:i])
+    line_pred.set_data(current_index, train_set['train_pred'][:i])
+    return line_train, line_pred
+
+frames_total = len(train_set)
+anim = animation.FuncAnimation(
+    fig, animate,
+    init_func=init,
+    frames=frames_total,
+    interval=0.0001,
+    blit=True
+)
+
+ax.set_xlim(train_set.index[0], train_set.index[-1])
+y_min = train_set[['train', 'train_pred']].min().min()
+y_max = train_set[['train', 'train_pred']].max().max()
+ax.set_ylim(y_min, y_max)
+
+ax.set_xlabel('Original Index')
+ax.set_ylabel('Value')
+ax.set_title('Animated from row 35000 onwards')
+ax.legend()
+ax.grid(True)
+
+plt.show()
