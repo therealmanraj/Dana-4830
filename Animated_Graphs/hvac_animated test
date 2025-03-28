@@ -32,26 +32,36 @@ def init():
     line_test_pred.set_data([], [])
     return line_test, line_test_pred
 
+# Set an offset so that test_pred is drawn ahead
+offset_frames = 50  # adjust this value as needed
+
 # 5) animate(i): only update test lines
 def animate(i):
     n_test = len(test_set)
-    # Reveal test data gradually
+    # For test actual values: reveal i points
     if i <= n_test:
         line_test.set_data(test_set.index[:i], test_set['test'][:i])
-        line_test_pred.set_data(test_set.index[:i], test_set['test_pred'][:i])
     else:
         line_test.set_data(test_set.index, test_set['test'])
-        line_test_pred.set_data(test_set.index, test_set['test_pred'])
+    
+    # For test predictions: reveal i + offset points (clamped to n_test)
+    j = i + offset_frames
+    if j > n_test:
+        j = n_test
+    line_test_pred.set_data(test_set.index[:j], test_set['test_pred'][:j])
+    
     return line_test, line_test_pred
 
 # 6) Create the FuncAnimation
-frames_total = len(test_set) + 10  # extra frames for pause at the end
+n_train = len(train_set)
+n_test = len(test_set)
+frames_total = n_test + 10  # extra frames for pause at the end
 anim = animation.FuncAnimation(
     fig,
     animate,
     init_func=init,
     frames=frames_total,
-    interval=50,  # adjust ms delay between frames as needed
+    interval=50,  # ms between frames
     blit=True
 )
 
@@ -61,7 +71,7 @@ x_min = 0
 x_max = len(train_set) + len(test_set) - 1
 ax.set_xlim(x_min, x_max)
 
-# Y-axis: combine min and max from both train_set and test_set
+# Y-axis: combine min and max from train_set and test_set
 y_min_train = train_set[['train','train_pred']].min().min()
 y_max_train = train_set[['train','train_pred']].max().max()
 y_min_test  = test_set[['test','test_pred']].min().min()
