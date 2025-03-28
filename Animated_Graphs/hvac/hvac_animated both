@@ -1,0 +1,97 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+
+# 1) Load train_set and optionally slice from row 40500 (or 40900 here)
+train_set = pd.read_csv('Animated_Graphs/hvac/train_set.csv')
+train_set = train_set[40900:]  
+train_set.reset_index(drop=True, inplace=True)
+
+# 2) Load test_set, reindex so it starts where train_set ends
+test_set = pd.read_csv('Animated_Graphs/hvac/test_set.csv')
+test_set = test_set[:1500]
+test_set.reset_index(drop=True, inplace=True)
+
+start_test_idx = len(train_set)
+test_len = len(test_set)
+test_set.index = range(start_test_idx, start_test_idx + test_len)
+
+# 3) Create the figure and lines
+fig, ax = plt.subplots(figsize=(15, 5))
+
+line_train, = ax.plot([], [], label='Train (actual)', color='blue',  linewidth=4)
+line_train_pred, = ax.plot([], [], label='Train (pred)',   color='red',   linestyle='--', linewidth=2)
+line_test, = ax.plot([], [], label='Test (actual)',  color='green', linewidth=4)
+line_test_pred, = ax.plot([], [], label='Test (pred)',    color='orange', linestyle='--', linewidth=2)
+
+# 4) init() function
+def init():
+    line_train.set_data([], [])
+    line_train_pred.set_data([], [])
+    line_test.set_data([], [])
+    line_test_pred.set_data([], [])
+    return line_train, line_train_pred, line_test, line_test_pred
+
+# 5) animate(i): reveal train lines first, then test lines
+def animate(i):
+    n_train = len(train_set)
+    n_test = len(test_set)
+
+    if i <= n_train:
+        # Reveal i points of train data
+        line_train.set_data(train_set.index[:i], train_set['train'][:i])
+        line_train_pred.set_data(train_set.index[:i], train_set['train_pred'][:i])
+        # Test lines remain empty
+        line_test.set_data([], [])
+        line_test_pred.set_data([], [])
+    else:
+        # Show full train
+        line_train.set_data(train_set.index, train_set['train'])
+        line_train_pred.set_data(train_set.index, train_set['train_pred'])
+
+        # Start revealing test
+        j = i - n_train
+        if j <= n_test:
+            line_test.set_data(test_set.index[:j], test_set['test'][:j])
+            line_test_pred.set_data(test_set.index[:j], test_set['test_pred'][:j])
+        else:
+            # Beyond train+test => show all
+            line_test.set_data(test_set.index, test_set['test'])
+            line_test_pred.set_data(test_set.index, test_set['test_pred'])
+
+    return line_train, line_train_pred, line_test, line_test_pred
+
+# 6) Create the FuncAnimation
+n_train = len(train_set)
+n_test = len(test_set)
+frames_total = n_train + n_test + 10
+anim = animation.FuncAnimation(
+    fig,
+    animate,
+    init_func=init,
+    frames=frames_total,
+    interval=1,
+    blit=True
+)
+
+# 7) Set axis limits
+x_min = 0
+x_max = n_train + n_test - 1
+ax.set_xlim(x_min, x_max)
+
+y_min_train = train_set[['train','train_pred']].min().min()
+y_max_train = train_set[['train','train_pred']].max().max()
+y_min_test  = test_set[['test','test_pred']].min().min()
+y_max_test  = test_set[['test','test_pred']].max().max()
+y_min = min(y_min_train, y_min_test)
+y_max = max(y_max_train, y_max_test)
+ax.set_ylim(y_min, y_max)
+
+# 8) Customize labels/titles as requested
+ax.set_xlabel('')               # No x-axis label
+ax.set_ylabel('Consumption')    # Y-axis label
+ax.set_title('')               # No figure title
+ax.legend()
+ax.grid(True)
+
+plt.show()

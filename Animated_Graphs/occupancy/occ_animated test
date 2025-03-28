@@ -1,0 +1,213 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+
+# 1) Load train_set and optionally slice from row 40900
+train_set = pd.read_csv('Animated_Graphs/occupancy/train_set.csv')
+train_set = train_set[40900:]  # optional slice; remove if not needed
+train_set.reset_index(drop=True, inplace=True)
+
+# 2) Load test_set, reindex so it starts where train_set ends
+test_set = pd.read_csv('Animated_Graphs/occupancy/test_set.csv')
+test_set = test_set[:1500]
+test_set.reset_index(drop=True, inplace=True)
+start_test_idx = len(train_set)
+test_len = len(test_set)
+test_set.index = range(start_test_idx, start_test_idx + test_len)
+
+# 3) Create the figure and lines (4 total: train actual/pred, test actual/pred)
+fig, ax = plt.subplots(figsize=(15, 5))
+
+# Plot train lines statically (shown fully from the start)
+line_train, = ax.plot(train_set.index, train_set['train'], label='Train (actual)', color='blue', linewidth=4)
+line_train_pred, = ax.plot(train_set.index, train_set['train_pred'], label='Train (pred)', color='red', linestyle='--', linewidth=2)
+
+# Create test line objects to be animated (start empty)
+line_test, = ax.plot([], [], label='Test (actual)', color='green', linewidth=4)
+line_test_pred, = ax.plot([], [], label='Test (pred)', color='orange', linestyle='--', linewidth=2)
+
+# 4) init() function: set test lines to empty
+def init():
+    line_test.set_data([], [])
+    line_test_pred.set_data([], [])
+    return line_test, line_test_pred
+
+# Set an offset so that test_pred is drawn ahead
+offset_frames = 50  # adjust this value as needed
+
+# 5) animate(i): only update test lines
+def animate(i):
+    n_test = len(test_set)
+    # For test actual values: reveal i points
+    if i <= n_test:
+        line_test.set_data(test_set.index[:i], test_set['test'][:i])
+    else:
+        line_test.set_data(test_set.index, test_set['test'])
+    
+    # For test predictions: reveal i + offset points (clamped to n_test)
+    j = i + offset_frames
+    if j > n_test:
+        j = n_test
+    line_test_pred.set_data(test_set.index[:j], test_set['test_pred'][:j])
+    
+    return line_test, line_test_pred
+
+# 6) Create the FuncAnimation
+n_train = len(train_set)
+n_test = len(test_set)
+frames_total = n_test + 10  # extra frames for pause at the end
+anim = animation.FuncAnimation(
+    fig,
+    animate,
+    init_func=init,
+    frames=frames_total,
+    interval=50,  # ms between frames
+    blit=True
+)
+
+# 7) Set axis limits
+# X-axis spans from 0 to end of test_set index
+x_min = 0
+x_max = len(train_set) + len(test_set) - 1
+ax.set_xlim(x_min, x_max)
+
+# Y-axis: combine min and max from train_set and test_set
+y_min_train = train_set[['train','train_pred']].min().min()
+y_max_train = train_set[['train','train_pred']].max().max()
+y_min_test  = test_set[['test','test_pred']].min().min()
+y_max_test  = test_set[['test','test_pred']].max().max()
+y_min = min(y_min_train, y_min_test)
+y_max = max(y_max_train, y_max_test)
+ax.set_ylim(y_min, y_max)
+
+# 8) Customize labels/titles as requested
+ax.set_xlabel('')               # No x-axis label
+ax.set_ylabel('Occupancy')    # Y-axis label
+ax.set_title('')                # No title
+ax.legend()
+ax.grid(True)
+
+plt.show()
+
+
+#######################################################################################################
+# Up is the original color sceme
+#######################################################################################################
+
+
+# import pandas as pd
+# import matplotlib.pyplot as plt
+# import matplotlib.animation as animation
+
+# # 1) Load train_set and optionally slice from row 40900
+# train_set = pd.read_csv('Animated_Graphs/occupancy/train_set.csv')
+# train_set = train_set[40900:]  # optional slice; remove if not needed
+# train_set.reset_index(drop=True, inplace=True)
+
+# # 2) Load test_set, reindex so it starts where train_set ends
+# test_set = pd.read_csv('Animated_Graphs/occupancy/test_set.csv')
+# test_set = test_set[:1500]
+# test_set.reset_index(drop=True, inplace=True)
+# start_test_idx = len(train_set)
+# test_len = len(test_set)
+# test_set.index = range(start_test_idx, start_test_idx + test_len)
+
+# # 3) Create the figure
+# fig, ax = plt.subplots(figsize=(15, 5))
+
+# # Set the figure and axes background to dark
+# fig.patch.set_facecolor('#2C2F48')  # Dark navy/gray
+# ax.set_facecolor('#2C2F48')
+
+# # Make axis labels/ticks white for contrast
+# ax.xaxis.label.set_color('white')
+# ax.yaxis.label.set_color('white')
+# ax.tick_params(axis='x', colors='white')
+# ax.tick_params(axis='y', colors='white')
+
+# # We'll add the legend later once all lines are defined
+# # so we can set the legend text to white.
+
+# # 4) Plot training lines statically (fully visible from the start)
+# #    Using bright colors for clarity:
+# #    - Train (actual) => lime (#00FF00)
+# #    - Train (pred)   => magenta (#FF00FF)
+# line_train, = ax.plot(
+#     train_set.index, train_set['train'], 
+#     label='Training data', color='#00FF00', linewidth=4
+# )
+# line_train_pred, = ax.plot(
+#     train_set.index, train_set['train_pred'], 
+#     label='Training predictions', color='#FF00FF', linestyle='--', linewidth=2
+# )
+
+# # 5) Create test line objects to be animated (start empty)
+# #    - Test (actual) => yellow (#FFFF00)
+# #    - Test (pred)   => cyan (#00FFFF)
+# line_test, = ax.plot([], [], label='Test data', color='#FFFF00', linewidth=4)
+# line_test_pred, = ax.plot([], [], label='Test predictions', color='#00FFFF', linestyle='--', linewidth=2)
+
+# # 6) init() function: set test lines to empty
+# def init():
+#     line_test.set_data([], [])
+#     line_test_pred.set_data([], [])
+#     return line_test, line_test_pred
+
+# # Offset so that test_pred is drawn ahead of the actual
+# offset_frames = 50
+
+# # 7) animate(i): only update test lines
+# def animate(i):
+#     n_test = len(test_set)
+#     # Reveal i points for test actual
+#     if i <= n_test:
+#         line_test.set_data(test_set.index[:i], test_set['test'][:i])
+#     else:
+#         line_test.set_data(test_set.index, test_set['test'])
+
+#     # Reveal i + offset points for test predictions
+#     j = i + offset_frames
+#     if j > n_test:
+#         j = n_test
+#     line_test_pred.set_data(test_set.index[:j], test_set['test_pred'][:j])
+    
+#     return line_test, line_test_pred
+
+# # 8) Create the FuncAnimation
+# n_train = len(train_set)
+# n_test = len(test_set)
+# frames_total = n_test + 10
+# anim = animation.FuncAnimation(
+#     fig, animate,
+#     init_func=init,
+#     frames=frames_total,
+#     interval=50,
+#     blit=True
+# )
+
+# # 9) Axis limits
+# x_min = 0
+# x_max = len(train_set) + len(test_set) - 1
+# ax.set_xlim(x_min, x_max)
+
+# y_min_train = train_set[['train','train_pred']].min().min()
+# y_max_train = train_set[['train','train_pred']].max().max()
+# y_min_test  = test_set[['test','test_pred']].min().min()
+# y_max_test  = test_set[['test','test_pred']].max().max()
+# y_min = min(y_min_train, y_min_test)
+# y_max = max(y_max_train, y_max_test)
+# ax.set_ylim(y_min, y_max)
+
+# # 10) Labels, legend, grid
+# ax.set_xlabel('')
+# ax.set_ylabel('Occupancy')
+# ax.set_title('')  
+# ax.grid(True, color='#4B4B4B', alpha=0.4)
+
+# # Add the legend, make its text white, transparent background
+# legend = ax.legend(facecolor='none', edgecolor='none')
+# plt.setp(legend.get_texts(), color='white')
+
+# plt.show()
+
+# # anim.save('Animated_Graphs/my_animation1.mp4', writer='ffmpeg', fps=30)

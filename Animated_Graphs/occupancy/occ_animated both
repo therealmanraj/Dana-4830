@@ -3,12 +3,12 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
 # 1) Load train_set and optionally slice from row 40500 (or 40900 here)
-train_set = pd.read_csv('Animated_Graphs/train_set.csv')
+train_set = pd.read_csv('Animated_Graphs/occupancy/train_set.csv')
 train_set = train_set[40900:]  
 train_set.reset_index(drop=True, inplace=True)
 
 # 2) Load test_set, reindex so it starts where train_set ends
-test_set = pd.read_csv('Animated_Graphs/test_set.csv')
+test_set = pd.read_csv('Animated_Graphs/occupancy/test_set.csv')
 test_set = test_set[:1500]
 test_set.reset_index(drop=True, inplace=True)
 
@@ -89,7 +89,7 @@ ax.set_ylim(y_min, y_max)
 
 # 8) Customize labels/titles as requested
 ax.set_xlabel('')               # No x-axis label
-ax.set_ylabel('Consumption')    # Y-axis label
+ax.set_ylabel('Occupancy')    # Y-axis label
 ax.set_title('')               # No figure title
 ax.legend()
 ax.grid(True)
