@@ -2,46 +2,114 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
-# Load your data and select starting from row 35000 (keeping the original index)
+# 1) Load train_set and optionally slice from row 40500
 train_set = pd.read_csv('Animated_Graphs/train_set.csv')
-train_set = train_set[40500:]  # This keeps the original index (e.g., 35000, 35001, ...)
+train_set = train_set[40900:]  # Remove this line if you want the full dataset
+# Now reindex so it starts at 0
+train_set.reset_index(drop=True, inplace=True)
 
+# 2) Load test_set, reindex so it starts where train_set ends
+test_set = pd.read_csv('Animated_Graphs/test_set.csv')
+test_set = test_set[:1500]
+test_set.reset_index(drop=True, inplace=True)
+
+
+# Let's shift test_set's index so it picks up from the last train index + 1
+start_test_idx = len(train_set)  # e.g., if train_set has 100 rows, test starts at index=100
+test_len = len(test_set)
+test_set.index = range(start_test_idx, start_test_idx + test_len)
+# Now train_set goes [0 .. n_train-1], test_set goes [n_train .. n_train + n_test-1]
+
+# 3) Create the figure and lines (4 total: train actual/pred, test actual/pred)
 fig, ax = plt.subplots(figsize=(15, 5))
 
-# Create line objects with increased linewidths
-line_train, = ax.plot([], [], label='Train', color='blue', linewidth=6)
-line_pred, = ax.plot([], [], label='Train_Pred', color='red', linestyle='--', linewidth=2)
+line_train, = ax.plot([], [], label='Train (actual)', color='blue',  linewidth=4)
+line_train_pred, = ax.plot([], [], label='Train (pred)',   color='red',   linestyle='--', linewidth=2)
+line_test, = ax.plot([], [], label='Test (actual)',  color='green', linewidth=4)
+line_test_pred, = ax.plot([], [], label='Test (pred)',    color='orange', linestyle='--', linewidth=2)
 
+# 4) init() function: start with empty lines
 def init():
     line_train.set_data([], [])
-    line_pred.set_data([], [])
-    return line_train, line_pred
+    line_train_pred.set_data([], [])
+    line_test.set_data([], [])
+    line_test_pred.set_data([], [])
+    return line_train, line_train_pred, line_test, line_test_pred
 
+# 5) animate(i): reveal train lines first, then test lines
 def animate(i):
-    # Reveal i points. Note: the index starts at 35000
-    current_index = train_set.index[:i]
-    line_train.set_data(current_index, train_set['train'][:i])
-    line_pred.set_data(current_index, train_set['train_pred'][:i])
-    return line_train, line_pred
+    """
+    i goes from 0 to total_frames.
+    Let n_train = len(train_set), n_test = len(test_set).
+    - While i <= n_train, reveal 'i' points of train_set.
+    - Once i > n_train, show all train, reveal (i - n_train) points of test_set.
+    """
+    n_train = len(train_set)
+    n_test = len(test_set)
 
-frames_total = len(train_set)
+    if i <= n_train:
+        # Reveal i points of train data
+        line_train.set_data(train_set.index[:i], train_set['train'][:i])
+        line_train_pred.set_data(train_set.index[:i], train_set['train_pred'][:i])
+
+        # Test lines remain empty until we finish train
+        line_test.set_data([], [])
+        line_test_pred.set_data([], [])
+
+    else:
+        # Show full train
+        line_train.set_data(train_set.index, train_set['train'])
+        line_train_pred.set_data(train_set.index, train_set['train_pred'])
+
+        # Start revealing test
+        j = i - n_train  # how many test points to show
+        if j <= n_test:
+            line_test.set_data(test_set.index[:j], test_set['test'][:j])
+            line_test_pred.set_data(test_set.index[:j], test_set['test_pred'][:j])
+        else:
+            # Beyond train+test => show all
+            line_test.set_data(test_set.index, test_set['test'])
+            line_test_pred.set_data(test_set.index, test_set['test_pred'])
+
+    return line_train, line_train_pred, line_test, line_test_pred
+
+# 6) Create the FuncAnimation
+n_train = len(train_set)
+n_test = len(test_set)
+frames_total = n_train + n_test + 10  # +10 for a little pause at the end
 anim = animation.FuncAnimation(
-    fig, animate,
+    fig,
+    animate,
     init_func=init,
     frames=frames_total,
-    interval=0.0001,
+    interval=1,  # ms between frames
     blit=True
 )
 
-ax.set_xlim(train_set.index[0], train_set.index[-1])
-y_min = train_set[['train', 'train_pred']].min().min()
-y_max = train_set[['train', 'train_pred']].max().max()
+# 7) Set axis limits
+# Since we reindexed train_set from 0..(n_train-1), and test_set from n_train..(n_train+n_test-1),
+# the total range is [0 .. n_train + n_test - 1].
+x_min = 0
+x_max = n_train + n_test - 1
+ax.set_xlim(x_min, x_max)
+
+# For y-limits, combine min/max from train_set and test_set
+y_min_train = train_set[['train','train_pred']].min().min()
+y_max_train = train_set[['train','train_pred']].max().max()
+y_min_test  = test_set[['test','test_pred']].min().min()
+y_max_test  = test_set[['test','test_pred']].max().max()
+y_min = min(y_min_train, y_min_test)
+y_max = max(y_max_train, y_max_test)
 ax.set_ylim(y_min, y_max)
 
-ax.set_xlabel('Original Index')
+# 8) Labels, legend, show
+ax.set_xlabel('Index (Reindexed: Train 0..N, Test N+1..end)')
 ax.set_ylabel('Value')
-ax.set_title('Animated from row 35000 onwards')
+ax.set_title('Animation: Train -> Test (Continuous Index)')
 ax.legend()
 ax.grid(True)
+
+# If you want to save as mp4 or GIF, do so here:
+# anim.save('train_test_animation.mp4', writer='ffmpeg', fps=30)
 
 plt.show()
