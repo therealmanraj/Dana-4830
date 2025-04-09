@@ -1,17 +1,14 @@
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 import xgboost as xgb
-from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
+from sklearn.metrics import mean_squared_error, mean_absolute_error
 
 np.random.seed(42)
 
 hvac_data = pd.read_csv('hvac_model_zones.csv')
 print('HVAC Data Shape:', hvac_data.shape)
 hvac_data.head()
-
-hvac_data.columns = hvac_data.columns.str.replace(r"^b'|'$|\[.*?\]", "", regex=True)
 
 hvac_data = hvac_data.loc[hvac_data['Environment:Site Day Type Index'] != 0]
 hvac_data["HVAC_kWh"] = hvac_data["Electricity:HVAC"] * 2.77778e-7
