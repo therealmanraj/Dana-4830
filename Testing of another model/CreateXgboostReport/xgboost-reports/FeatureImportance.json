@@ -1,0 +1,154 @@
+{
+  "features": {
+    "weight": [
+      {
+        "feature": "f0",
+        "importance": 22.99709
+      },
+      {
+        "feature": "f1",
+        "importance": 6.76629
+      },
+      {
+        "feature": "f2",
+        "importance": 10.83437
+      },
+      {
+        "feature": "f3",
+        "importance": 3.36239
+      },
+      {
+        "feature": "f4",
+        "importance": 12.49481
+      },
+      {
+        "feature": "f5",
+        "importance": 6.30967
+      },
+      {
+        "feature": "f6",
+        "importance": 2.36613
+      },
+      {
+        "feature": "f7",
+        "importance": 1.78497
+      },
+      {
+        "feature": "f8",
+        "importance": 8.13616
+      },
+      {
+        "feature": "f9",
+        "importance": 6.39269
+      },
+      {
+        "feature": "f10",
+        "importance": 13.90619
+      },
+      {
+        "feature": "f11",
+        "importance": 4.64923
+      }
+    ],
+    "gain": [
+      {
+        "feature": "f0",
+        "importance": 3.96102
+      },
+      {
+        "feature": "f1",
+        "importance": 2.93942
+      },
+      {
+        "feature": "f2",
+        "importance": 11.69256
+      },
+      {
+        "feature": "f3",
+        "importance": 4.30199
+      },
+      {
+        "feature": "f4",
+        "importance": 3.98425
+      },
+      {
+        "feature": "f5",
+        "importance": 39.02759
+      },
+      {
+        "feature": "f6",
+        "importance": 2.62947
+      },
+      {
+        "feature": "f7",
+        "importance": 3.0391
+      },
+      {
+        "feature": "f8",
+        "importance": 14.99602
+      },
+      {
+        "feature": "f9",
+        "importance": 7.09923
+      },
+      {
+        "feature": "f10",
+        "importance": 3.8111
+      },
+      {
+        "feature": "f11",
+        "importance": 2.51823
+      }
+    ],
+    "cover": [
+      {
+        "feature": "f0",
+        "importance": 6.55648
+      },
+      {
+        "feature": "f1",
+        "importance": 7.17838
+      },
+      {
+        "feature": "f2",
+        "importance": 8.22474
+      },
+      {
+        "feature": "f3",
+        "importance": 10.55166
+      },
+      {
+        "feature": "f4",
+        "importance": 7.40496
+      },
+      {
+        "feature": "f5",
+        "importance": 8.21596
+      },
+      {
+        "feature": "f6",
+        "importance": 7.50406
+      },
+      {
+        "feature": "f7",
+        "importance": 6.71921
+      },
+      {
+        "feature": "f8",
+        "importance": 10.68702
+      },
+      {
+        "feature": "f9",
+        "importance": 10.63462
+      },
+      {
+        "feature": "f10",
+        "importance": 8.20167
+      },
+      {
+        "feature": "f11",
+        "importance": 8.12124
+      }
+    ]
+  }
+}

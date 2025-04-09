@@ -1,0 +1,12 @@
+{
+  "labels_and_samples": [
+    {
+      "labels": "0",
+      "num_samples_per_label": 977800.0
+    },
+    {
+      "labels": "1",
+      "num_samples_per_label": 324600.0
+    }
+  ]
+}

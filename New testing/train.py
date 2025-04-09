@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 import io
 import os
-import boto3
 import pickle
+import boto3
 import pandas as pd
 import numpy as np
 import xgboost as xgb
@@ -145,17 +145,22 @@ def main():
     prediction_df.to_csv(csv_buffer, index=False)
     s3.put_object(Bucket=s3_bucket, Key=s3_key_pred, Body=csv_buffer.getvalue())
     
-    # --- IMPORTANT: Save Model Artifacts for Deployment ---
-    # This section writes the trained models to the directory that SageMaker looks for.
+    # --- Save Model Artifacts for Deployment ---
+    # Write the trained models to the directory that SageMaker uses: /opt/ml/model
     model_dir = os.environ.get("SM_MODEL_DIR", "/opt/ml/model")
     if not os.path.exists(model_dir):
         os.makedirs(model_dir)
+        
+    # model_dir = os.environ.get("SM_MODEL_DIR", "./model_artifacts")
+    # if not os.path.exists(model_dir):
+    #     os.makedirs(model_dir)
+
     
     # Save the Linear Regression model
     with open(os.path.join(model_dir, "linear_model.pkl"), "wb") as f:
         pickle.dump(linear_model, f)
     
-    # Save the XGBoost model if it exists
+    # Save the XGBoost model if it was trained
     if xgb_model is not None:
         with open(os.path.join(model_dir, "xgb_model.pkl"), "wb") as f:
             pickle.dump(xgb_model, f)
