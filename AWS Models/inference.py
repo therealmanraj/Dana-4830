@@ -4,12 +4,10 @@ import pandas as pd
 
 def model_fn(model_dir):
     """Load and return the model. This function is called once when the container is created."""
-    # Load the linear and XGBoost models from the model directory
     with open(f"{model_dir}/linear_model.pkl", "rb") as f:
         linear_model = pickle.load(f)
     with open(f"{model_dir}/xgb_model.pkl", "rb") as f:
         xgb_model = pickle.load(f)
-    # You can also return additional parameters (like lags) if needed
     return {"linear_model": linear_model, "xgb_model": xgb_model, "lags": 5}
 
 def input_fn(request_body, content_type='application/json'):
@@ -22,9 +20,6 @@ def input_fn(request_body, content_type='application/json'):
 
 def predict_fn(input_data, model):
     """Apply model to the incoming request."""
-    # Here, we simply use the linear model prediction.
-    # For a hybrid prediction, you’d need to calculate residuals with lags,
-    # which typically requires previous observations.
     linear_model = model["linear_model"]
     predictions = linear_model.predict(input_data)
     return predictions
