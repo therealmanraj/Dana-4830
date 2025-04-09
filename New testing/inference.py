@@ -25,14 +25,25 @@ def model_fn(model_dir):
 
     return {"linear": linear_model, "xgb": xgb_model}
 
+# def input_fn(input_data, content_type):
+#     """
+#     Deserializes the incoming request data (expected to be CSV) into a DataFrame.
+#     """
+#     if content_type == "text/csv":
+#         return pd.read_csv(io.StringIO(input_data))
+#     else:
+#         raise ValueError("Unsupported content type: {}".format(content_type))
+
 def input_fn(input_data, content_type):
-    """
-    Deserializes the incoming request data (expected to be CSV) into a DataFrame.
-    """
     if content_type == "text/csv":
-        return pd.read_csv(io.StringIO(input_data))
+        df = pd.read_csv(io.StringIO(input_data))
+        # If HVAC_kWh is missing, compute it:
+        if "HVAC_kWh" not in df.columns and "Electricity:HVAC" in df.columns:
+            df["HVAC_kWh"] = df["Electricity:HVAC"] * 2.77778e-7
+        return df
     else:
         raise ValueError("Unsupported content type: {}".format(content_type))
+
 
 def predict_fn(data, model):
     """
