@@ -161,9 +161,9 @@ def main():
         pickle.dump(linear_model, f)
     
     # Save the XGBoost model if it was trained
-    if xgb_model is not None:
-        with open(os.path.join(model_dir, "xgb_model.pkl"), "wb") as f:
-            pickle.dump(xgb_model, f)
+    # if xgb_model is not None:
+    with open(os.path.join(model_dir, "xgb_model.pkl"), "wb") as f:
+        pickle.dump(xgb_model, f)
 
 if __name__ == "__main__":
     main()

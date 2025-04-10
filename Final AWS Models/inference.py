@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python
 import os
 import pickle
@@ -88,36 +89,48 @@ def model_fn(model_dir):
 
     try:
         xgb_model_path = os.path.join(model_dir, "xgb_model.pkl")
-        if os.path.exists(xgb_model_path):
-            with open(xgb_model_path, "rb") as f:
-                xgb_model = pickle.load(f)
-            logger.info("Loaded XGBoost model.")
-        else:
-            logger.info("No XGBoost model found; xgb_model set to None.")
-            xgb_model = None
+        # if os.path.exists(xgb_model_path):
+        with open(xgb_model_path, "rb") as f:
+            xgb_model = pickle.load(f)
+        logger.info("Loaded XGBoost model.")
+        # else:
+        #     logger.info("No XGBoost model found; xgb_model set to None.")
+        #     xgb_model = None
     except Exception as e:
         logger.error("Error loading xgb_model.pkl: %s", e)
         raise
 
     return {"linear": linear_model, "xgb": xgb_model}
 
+# def input_fn(input_data, content_type):
+#     """
+#     Deserializes the incoming request data (expected to be CSV) into a DataFrame.
+#     Applies the same data transformation as during training.
+#     """
+#     try:
+#         if content_type == "text/csv":
+#             df = pd.read_csv(io.StringIO(input_data))
+#             logger.info("Input CSV read successfully; applying transformation.")
+#             df = transform_data(df)
+#             logger.info("Transformation complete. DataFrame shape: %s", df.shape)
+#             return df
+#         else:
+#             raise ValueError("Unsupported content type: {}".format(content_type))
+#     except Exception as e:
+#         logger.error("Error in input_fn: %s", e)
+#         raise
+
 def input_fn(input_data, content_type):
-    """
-    Deserializes the incoming request data (expected to be CSV) into a DataFrame.
-    Applies the same data transformation as during training.
-    """
-    try:
-        if content_type == "text/csv":
-            df = pd.read_csv(io.StringIO(input_data))
-            logger.info("Input CSV read successfully; applying transformation.")
-            df = transform_data(df)
-            logger.info("Transformation complete. DataFrame shape: %s", df.shape)
-            return df
-        else:
-            raise ValueError("Unsupported content type: {}".format(content_type))
-    except Exception as e:
-        logger.error("Error in input_fn: %s", e)
-        raise
+    if content_type == "text/csv":
+        df = pd.read_csv(io.StringIO(input_data))
+        print("DEBUG: Raw input DataFrame head:")
+        print(df.head())
+        df = transform_data(df)
+        print("DEBUG: Transformed DataFrame shape:", df.shape)
+        return df
+    else:
+        raise ValueError("Unsupported content type: {}".format(content_type))
+
 
 def predict_fn(data, model):
     """
@@ -153,22 +166,47 @@ def predict_fn(data, model):
         logger.error("Error in predict_fn: %s", e)
         raise
 
+# def output_fn(prediction, accept):
+#     """
+#     Serializes the prediction (as CSV) to return to the client.
+#     """
+#     try:
+#         if accept == "text/csv":
+#             out_df = pd.DataFrame(prediction, columns=["Predicted_HVAC_kWh"])
+#             buffer = io.StringIO()
+#             out_df.to_csv(buffer, index=False)
+#             logger.info("Output serialization complete.")
+#             return buffer.getvalue()
+#         else:
+#             raise ValueError("Unsupported accept type: {}".format(accept))
+#     except Exception as e:
+#         logger.error("Error in output_fn: %s", e)
+#         raise
+
+# def output_fn(prediction, accept):
+#     # Debug print to show what content type is being passed
+#     print("Received accept type:", accept)
+#     if accept == "text/csv" or accept == "application/x-npy":
+#         # In the case of application/x-npy, we still want to return CSV formatted predictions
+#         out_df = pd.DataFrame(prediction, columns=["Predicted_HVAC_kWh"])
+#         buffer = io.StringIO()
+#         out_df.to_csv(buffer, index=False)
+#         return buffer.getvalue()
+#     else:
+#         raise ValueError("Unsupported accept type: {}".format(accept))
+
 def output_fn(prediction, accept):
-    """
-    Serializes the prediction (as CSV) to return to the client.
-    """
-    try:
-        if accept == "text/csv":
-            out_df = pd.DataFrame(prediction, columns=["Predicted_HVAC_kWh"])
-            buffer = io.StringIO()
-            out_df.to_csv(buffer, index=False)
-            logger.info("Output serialization complete.")
-            return buffer.getvalue()
-        else:
-            raise ValueError("Unsupported accept type: {}".format(accept))
-    except Exception as e:
-        logger.error("Error in output_fn: %s", e)
-        raise
+    print("DEBUG: Received accept type:", accept)
+    if accept == "text/csv" or accept == "application/x-npy":
+        out_df = pd.DataFrame(prediction, columns=["Predicted_HVAC_kWh"])
+        print("DEBUG: Output DataFrame head:")
+        print(out_df.head())
+        buffer = io.StringIO()
+        out_df.to_csv(buffer, index=False)
+        return buffer.getvalue()
+    else:
+        raise ValueError("Unsupported accept type: {}".format(accept))
+
 
 # --- For Local Testing ---
 if __name__ == '__main__':
