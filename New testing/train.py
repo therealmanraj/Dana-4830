@@ -46,8 +46,8 @@ def transform_data(df):
 
 def main():
     # S3 configuration
-    region = 'us-east-2'
-    s3_bucket = 'dana-minicapstone'
+    region = 'ca-central-1'
+    s3_bucket = 'dana-minicapstone-ca'
     
     # S3 keys for train, test, and output predictions
     s3_key_train = 'data/hvac_train.csv'

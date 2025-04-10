@@ -1,3 +1,142 @@
+# #!/usr/bin/env python
+# import os
+# import pickle
+# import io
+# import numpy as np
+# import pandas as pd
+# import xgboost as xgb
+# from sklearn.linear_model import LinearRegression
+
+# def transform_data(df):
+#     df = df.loc[df['Environment:Site Day Type Index'] != 0]
+#     df["HVAC_kWh"] = df["Electricity:HVAC"] * 2.77778e-7
+#     occupant_cols = [col for col in df.columns if 'Occupant' in col]
+#     df["TotalOccupantCount"] = df[occupant_cols].sum(axis=1)
+    
+#     time_shifts = [0.5, 1, 1.5, 2]
+#     for h in time_shifts:
+#         steps = int(h * 6)
+#         df[f"Occ_minus{int(h*60)}"] = df["TotalOccupantCount"].shift(steps)
+#     for h in time_shifts:
+#         steps = int(h * 6)
+#         df[f"Occ_plus{int(h*60)}"] = df["TotalOccupantCount"].shift(-steps)
+    
+#     df["WeekendOrHoliday"] = df["Environment:Site Day Type Index"].apply(
+#         lambda x: 1 if x in [0, 6, 7] else 0
+#     )
+#     df = df.dropna()
+#     return df
+
+
+# def model_fn(model_dir):
+#     """
+#     This function loads the model artifacts from the model directory.
+#     It loads linear_model.pkl and, if available, xgb_model.pkl.
+#     """
+#     try:
+#         linear_model_path = os.path.join(model_dir, "linear_model.pkl")
+#         with open(linear_model_path, "rb") as f:
+#             linear_model = pickle.load(f)
+#     except Exception as e:
+#         print("Error loading linear_model:", e)
+#         raise
+    
+#     try:
+#         xgb_model_path = os.path.join(model_dir, "xgb_model.pkl")
+#         if os.path.exists(xgb_model_path):
+#             with open(xgb_model_path, "rb") as f:
+#                 xgb_model = pickle.load(f)
+#         else:
+#             xgb_model = None
+#     except Exception as e:
+#         print("Error loading linear_model:", e)
+#         raise
+
+#     return {"linear": linear_model, "xgb": xgb_model}
+
+# def input_fn(input_data, content_type):
+#     if content_type == "text/csv":
+#         df = pd.read_csv(io.StringIO(input_data))
+#         # Ensure that the input has the computed field by applying the same transformation.
+#         # (Make sure to import transform_data from a common utility if needed.)
+#         # from train import transform_data  # if train.py and inference.py are in the same directory
+#         df = transform_data(df)
+#         return df
+#     else:
+#         raise ValueError("Unsupported content type: {}".format(content_type))
+
+
+# # def input_fn(input_data, content_type):
+# #     if content_type == "text/csv":
+# #         df = pd.read_csv(io.StringIO(input_data))
+# #         # If HVAC_kWh is missing, compute it:
+# #         if "HVAC_kWh" not in df.columns and "Electricity:HVAC" in df.columns:
+# #             df["HVAC_kWh"] = df["Electricity:HVAC"] * 2.77778e-7
+# #         return df
+# #     else:
+# #         raise ValueError("Unsupported content type: {}".format(content_type))
+
+
+# def predict_fn(data, model):
+#     """
+#     Generates predictions from the input data using the loaded models.
+#     This example uses a sequential index as a feature.
+#     If available, applies XGBoost residual correction.
+#     """
+#     linear_model = model["linear"]
+#     xgb_model = model["xgb"]
+    
+#     n = data.shape[0]
+#     # Create sequential feature for prediction
+#     X_seq = np.arange(n).reshape(-1, 1)
+#     predictions = linear_model.predict(X_seq)
+    
+#     lags = 5
+#     # If using XGBoost residual correction and if sufficient data is available:
+#     if "HVAC_kWh" not in data.columns and "Electricity:HVAC" in data.columns:
+#             data["HVAC_kWh"] = data["Electricity:HVAC"] * 2.77778e-7
+            
+#     if xgb_model is not None and n > lags and "HVAC_kWh" in data.columns:
+#         observed = data["HVAC_kWh"].values
+#         X_resid = []
+#         for i in range(lags, n):
+#             window = observed[i - lags:i] - predictions[i - lags:i]
+#             X_resid.append(window)
+#         X_resid = np.array(X_resid)
+#         resid_corrections = xgb_model.predict(X_resid)
+#         predictions[lags:] += resid_corrections
+
+#     return predictions
+
+# def output_fn(prediction, accept):
+#     """
+#     Serializes the prediction (as CSV) to return to the client.
+#     """
+#     if accept == "text/csv":
+#         out_df = pd.DataFrame(prediction, columns=["Predicted_HVAC_kWh"])
+#         buffer = io.StringIO()
+#         out_df.to_csv(buffer, index=False)
+#         return buffer.getvalue()
+#     else:
+#         raise ValueError("Unsupported accept type: {}".format(accept))
+
+# # For local testing of the inference script:
+# if __name__ == '__main__':
+#     import sys
+#     if len(sys.argv) != 3:
+#         sys.exit("Usage: {} <input_csv> <output_csv>".format(sys.argv[0]))
+#     # model_dir = os.environ.get("SM_MODEL_DIR", "./model_artifacts")
+#     model_dir = os.environ.get("SM_MODEL_DIR", "/opt/ml/model")
+#     model = model_fn(model_dir)
+#     with open(sys.argv[1], 'r') as f:
+#         input_data = f.read()
+#     data = input_fn(input_data, "text/csv")
+#     predictions = predict_fn(data, model)
+#     output_data = output_fn(predictions, "text/csv")
+#     with open(sys.argv[2], 'w') as f:
+#         f.write(output_data)
+
+
 #!/usr/bin/env python
 import os
 import pickle
@@ -25,7 +164,7 @@ file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 
 # S3 configuration for uploading logs (update as needed)
-LOG_S3_BUCKET = 'dana-minicapstone-ca'
+LOG_S3_BUCKET = 'dana-minicapstone'
 LOG_S3_PREFIX = 'logs/inference_logs/'
 
 def upload_log_to_s3():
