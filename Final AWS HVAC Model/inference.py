@@ -102,24 +102,6 @@ def model_fn(model_dir):
 
     return {"linear": linear_model, "xgb": xgb_model}
 
-# def input_fn(input_data, content_type):
-#     """
-#     Deserializes the incoming request data (expected to be CSV) into a DataFrame.
-#     Applies the same data transformation as during training.
-#     """
-#     try:
-#         if content_type == "text/csv":
-#             df = pd.read_csv(io.StringIO(input_data))
-#             logger.info("Input CSV read successfully; applying transformation.")
-#             df = transform_data(df)
-#             logger.info("Transformation complete. DataFrame shape: %s", df.shape)
-#             return df
-#         else:
-#             raise ValueError("Unsupported content type: {}".format(content_type))
-#     except Exception as e:
-#         logger.error("Error in input_fn: %s", e)
-#         raise
-
 def input_fn(input_data, content_type):
     if content_type == "text/csv":
         df = pd.read_csv(io.StringIO(input_data))
@@ -165,35 +147,6 @@ def predict_fn(data, model):
     except Exception as e:
         logger.error("Error in predict_fn: %s", e)
         raise
-
-# def output_fn(prediction, accept):
-#     """
-#     Serializes the prediction (as CSV) to return to the client.
-#     """
-#     try:
-#         if accept == "text/csv":
-#             out_df = pd.DataFrame(prediction, columns=["Predicted_HVAC_kWh"])
-#             buffer = io.StringIO()
-#             out_df.to_csv(buffer, index=False)
-#             logger.info("Output serialization complete.")
-#             return buffer.getvalue()
-#         else:
-#             raise ValueError("Unsupported accept type: {}".format(accept))
-#     except Exception as e:
-#         logger.error("Error in output_fn: %s", e)
-#         raise
-
-# def output_fn(prediction, accept):
-#     # Debug print to show what content type is being passed
-#     print("Received accept type:", accept)
-#     if accept == "text/csv" or accept == "application/x-npy":
-#         # In the case of application/x-npy, we still want to return CSV formatted predictions
-#         out_df = pd.DataFrame(prediction, columns=["Predicted_HVAC_kWh"])
-#         buffer = io.StringIO()
-#         out_df.to_csv(buffer, index=False)
-#         return buffer.getvalue()
-#     else:
-#         raise ValueError("Unsupported accept type: {}".format(accept))
 
 def output_fn(prediction, accept):
     print("DEBUG: Received accept type:", accept)
