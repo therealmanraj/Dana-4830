@@ -1,169 +1,88 @@
-#!/usr/bin/env python
-import io
+import argparse
 import os
-import pickle
-import boto3
 import pandas as pd
 import numpy as np
-import xgboost as xgb
 from sklearn.linear_model import LinearRegression
+import xgboost as xgb
 from sklearn.metrics import mean_squared_error, mean_absolute_error
+import joblib
 
-def compute_metrics(actual, predicted):
-    mae = mean_absolute_error(actual, predicted)
-    mse = mean_squared_error(actual, predicted)
+def compute_metrics(test_data, forecast_mean):
+    mae = mean_absolute_error(test_data, forecast_mean)
+    mse = mean_squared_error(test_data, forecast_mean)
     rmse = np.sqrt(mse)
     return {"mae": mae, "mse": mse, "rmse": rmse}
 
-def transform_data(df):
-    """
-    Applies preprocessing steps:
-      - Remove rows where 'Environment:Site Day Type Index' is 0.
-      - Convert 'Electricity:HVAC' to kWh.
-      - Sum occupant columns into 'TotalOccupantCount'.
-      - Create time-shifted occupant features.
-      - Create a 'WeekendOrHoliday' indicator.
-      - Drop rows with missing values.
-    """
-    df = df.loc[df['Environment:Site Day Type Index'] != 0]
-    df["HVAC_kWh"] = df["Electricity:HVAC"] * 2.77778e-7
-    occupant_cols = [col for col in df.columns if 'Occupant' in col]
-    df["TotalOccupantCount"] = df[occupant_cols].sum(axis=1)
-    
-    time_shifts = [0.5, 1, 1.5, 2]
-    for h in time_shifts:
-        steps = int(h * 6)
-        df[f"Occ_minus{int(h*60)}"] = df["TotalOccupantCount"].shift(steps)
-    for h in time_shifts:
-        steps = int(h * 6)
-        df[f"Occ_plus{int(h*60)}"] = df["TotalOccupantCount"].shift(-steps)
-    
-    df["WeekendOrHoliday"] = df["Environment:Site Day Type Index"].apply(
-        lambda x: 1 if x in [0, 6, 7] else 0
-    )
-    df = df.dropna()
+def add_lags(df):
+    for col in df.columns:
+        target_map = df[col].to_dict()
+        df[f'{col}_lag1'] = (df.index - pd.Timedelta('7 days')).map(target_map)
+        df[f'{col}_lag2'] = (df.index - pd.Timedelta('14 days')).map(target_map)
+        df[f'{col}_lag3'] = (df.index - pd.Timedelta('21 days')).map(target_map)
     return df
 
-def main():
-    # S3 configuration
-    region = 'ca-central-1'
-    s3_bucket = 'dana-minicapstone-ca'
-    
-    # S3 keys for train, test, and output predictions
-    s3_key_train = 'data/hvac_train.csv'
-    s3_key_test  = 'data/hvac_test.csv'
-    s3_key_pred  = 'data/hvac_pred.csv'
-    
-    # Create S3 client
-    s3 = boto3.client('s3', region_name=region)
-    
-    # --- Training Phase ---
-    # 1. Read TRAIN data from S3 and preprocess
-    train_response = s3.get_object(Bucket=s3_bucket, Key=s3_key_train)
-    train_df = pd.read_csv(train_response['Body'])
-    train_df = transform_data(train_df)
-    
-    # 2. Train the hybrid model (Linear Regression + XGBoost residual)
-    X_train = np.arange(len(train_df)).reshape(-1, 1)
-    y_train = train_df["HVAC_kWh"].values
-    
-    linear_model = LinearRegression()
-    linear_model.fit(X_train, y_train)
-    
-    # Compute residuals for XGBoost
-    y_fit = linear_model.predict(X_train)
-    residuals = y_train - y_fit
-    
-    lags = 5
-    if len(residuals) <= lags:
-        xgb_model = None
-    else:
-        X_resid = np.array([residuals[i - lags:i] for i in range(lags, len(residuals))])
-        y_resid = residuals[lags:]
-        xgb_model = xgb.XGBRegressor(
-            objective='reg:squarederror', 
-            n_estimators=100, 
-            max_depth=3,
-            seed=42
-        )
-        xgb_model.fit(X_resid, y_resid)
-    
-    # --- Testing/Prediction Phase ---
-    # 3. Read TEST data from S3 and transform
-    test_response = s3.get_object(Bucket=s3_bucket, Key=s3_key_test)
-    test_df = pd.read_csv(test_response['Body'])
-    test_df = transform_data(test_df)
-    
-    if len(test_df) == 0:
-        print("No test data after filtering; skipping predictions.")
-        return
-    
-    # 4. Generate predictions on the test set
-    X_test = np.arange(len(train_df), len(train_df) + len(test_df)).reshape(-1, 1)
-    y_pred_linear = linear_model.predict(X_test)
-    
-    if xgb_model and len(test_df) >= lags:
-        y_test = test_df["HVAC_kWh"].values
-        X_test_resid = [y_test[i - lags:i] - y_pred_linear[i - lags:i] for i in range(lags, len(y_test))]
-        X_test_resid = np.array(X_test_resid)
-        resid_test_predictions = xgb_model.predict(X_test_resid)
-        y_pred_boosted = y_pred_linear.copy()
-        y_pred_boosted[lags:] += resid_test_predictions
-        final_predictions = y_pred_boosted
-    else:
-        final_predictions = y_pred_linear
-    
-    # 5. Compute metrics on the test set
-    if len(test_df) >= lags and xgb_model:
-        actual_test = test_df["HVAC_kWh"].values[lags:]
-        pred_test   = final_predictions[lags:]
-        metrics = compute_metrics(actual_test, pred_test)
-    else:
-        actual_test = test_df["HVAC_kWh"].values
-        pred_test   = final_predictions
-        metrics = compute_metrics(actual_test, pred_test)
-    
-    print("Test Metrics:", metrics)
-    
-    # 6. Prepare predictions DataFrame and upload to S3
-    if len(test_df) >= lags and xgb_model:
-        test_index = test_df.index[lags:]
-        out_actual = test_df["HVAC_kWh"].iloc[lags:].values
-        out_pred   = final_predictions[lags:]
-    else:
-        test_index = test_df.index
-        out_actual = test_df["HVAC_kWh"].values
-        out_pred   = final_predictions
-    
-    prediction_df = pd.DataFrame({
-        'Index': test_index,
-        'Actual': out_actual,
-        'Predicted': out_pred
-    })
-    
-    csv_buffer = io.StringIO()
-    prediction_df.to_csv(csv_buffer, index=False)
-    s3.put_object(Bucket=s3_bucket, Key=s3_key_pred, Body=csv_buffer.getvalue())
-    
-    # --- Save Model Artifacts for Deployment ---
-    # Write the trained models to the directory that SageMaker uses: /opt/ml/model
-    model_dir = os.environ.get("SM_MODEL_DIR", "/opt/ml/model")
-    if not os.path.exists(model_dir):
-        os.makedirs(model_dir)
-        
-    # model_dir = os.environ.get("SM_MODEL_DIR", "./model_artifacts")
-    # if not os.path.exists(model_dir):
-    #     os.makedirs(model_dir)
+def create_features(df):
+    df = df.copy()
+    df['hour'] = df.index.hour
+    df['dayofweek'] = df.index.dayofweek
+    df['month'] = df.index.month
+    df['year'] = df.index.year
+    df['dayofmonth'] = df.index.day
+    df['weekofyear'] = df.index.isocalendar().week
+    return df
 
-    
-    # Save the Linear Regression model
-    with open(os.path.join(model_dir, "linear_model.pkl"), "wb") as f:
-        pickle.dump(linear_model, f)
-    
-    # Save the XGBoost model if it was trained
-    # if xgb_model is not None:
-    with open(os.path.join(model_dir, "xgb_model.pkl"), "wb") as f:
-        pickle.dump(xgb_model, f)
+def train_model(data_path, model_output_dir):
+    # Load data
+    hvac_data = pd.read_csv(data_path)
+    hvac_data.columns = hvac_data.columns.str.replace(r"^b'|'$|\\[.*?\\]", "", regex=True)
+    hvac_data = hvac_data.loc[hvac_data['Environment:Site Day Type Index'] != 0]
+    hvac_data["HVAC_kWh"] = hvac_data["Electricity:HVAC"] * 2.77778e-7
+    hvac_data.drop(columns='Electricity:HVAC', axis=1, inplace=True)
+
+    occupant_cols = [col for col in hvac_data.columns if 'Occupant' in col]
+    hvac_data["TotalOccCount"] = hvac_data[occupant_cols].sum(axis=1)
+    hvac_data.drop(columns=occupant_cols, axis=1, inplace=True)
+
+    lenOfData = len(hvac_data)
+    hvac_data.index = pd.date_range(start="2004-01-01 00:00:00", periods=lenOfData, freq="10min")
+
+    hvac_data = add_lags(hvac_data)
+    hvac_data = create_features(hvac_data)
+
+    features = [col for col in hvac_data.columns if '_lag' in col]
+    features += ['hour', 'dayofweek', 'month', 'year', 'dayofmonth', 'weekofyear']
+    target = 'HVAC_kWh'
+
+    hvac_data = hvac_data[features + [target]]
+
+    x_train = hvac_data[features][hvac_data.index.month < 10].bfill()
+    y_train = hvac_data[target][hvac_data.index.month < 10]
+
+    # Linear regression
+    lin_reg = LinearRegression()
+    lin_reg.fit(x_train, y_train)
+
+    y_train_residuals = y_train - pd.Series(lin_reg.predict(x_train), index=x_train.index)
+
+    xgb_model = xgb.XGBRegressor(
+        base_score=0.5,
+        booster='gbtree',
+        n_estimators=200,
+        objective='reg:squarederror',
+        max_depth=5,
+        learning_rate=0.05
+    )
+    xgb_model.fit(x_train, y_train_residuals)
+
+    os.makedirs(model_output_dir, exist_ok=True)
+    joblib.dump(lin_reg, os.path.join(model_output_dir, "lin_reg_model.joblib"))
+    joblib.dump(xgb_model, os.path.join(model_output_dir, "xgb_model.joblib"))
+    joblib.dump(features, os.path.join(model_output_dir, "features.joblib"))
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--data_path', type=str, required=True)
+    parser.add_argument('--model_output_dir', type=str, required=True)
+    args = parser.parse_args()
+
+    train_model(args.data_path, args.model_output_dir)
