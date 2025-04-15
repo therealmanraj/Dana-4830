@@ -8,13 +8,11 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 import xgboost as xgb
 import boto3
-import io
 
 import warnings
 warnings.filterwarnings("ignore")
 np.random.seed(42)
 
-# -------------------- Data Processing Functions --------------------
 def transform_data(df):
     df.columns = df.columns.str.replace(r"^b'|'$|\[.*?\]", "", regex=True)
     df = df.loc[df['Environment:Site Day Type Index'] != 0]
@@ -43,7 +41,6 @@ def create_features(df):
     df['weekofyear'] = df.index.isocalendar().week
     return df
 
-# -------------------- Training Functions --------------------
 def compute_metrics(actual, predicted):
     return {
         "mae": mean_absolute_error(actual, predicted),
@@ -67,32 +64,24 @@ def train_model(X_train, y_train):
     xgb_reg.fit(X_train, residuals, verbose=100)
     return lin_reg, xgb_reg
 
-# -------------------- Main Entry Point --------------------
 def main(args):
     print("Loading data...")
-    # if args.data_path.startswith("s3://"):
-        
-    #     s3 = boto3.client("s3", region_name="ca-central-1")
-    #     bucket_name = "dana-minicapstone-ca"
-    #     key = args.data_path.split(f"s3://{bucket_name}/data/hvac_model_zones.csv")[-1]
-    #     obj = s3.get_object(Bucket=bucket_name, Key=key)
-    #     df = pd.read_csv(io.BytesIO(obj['Body'].read()))
-    # else:
-    #     df = pd.read_csv(args.data_path)
-    
     region = 'ca-central-1'
     s3_bucket = 'dana-minicapstone-ca'
-    
     s3_key = 'data/hvac_model_zones.csv'
-    
     s3 = boto3.client('s3', region_name=region)
-    
     response = s3.get_object(Bucket=s3_bucket, Key=s3_key)
     df = pd.read_csv(response['Body'])
         
+    print("Transform data...")
     df = transform_data(df)
+    
+    print("Adding Lags to data...")
     df = add_lags(df)
+    
+    print("Creating Features data...")
     df = create_features(df)
+    
     df = df.bfill()
 
     features = ['weekofyear','hour','dayofmonth','month',
@@ -112,7 +101,7 @@ def main(args):
     print("Splitting data...")
     X_train = X[df.index.month <= 11]
     y_train = y[df.index.month <= 11]
-
+    
     print("Training model...")
     lin_reg_model, xgb_model = train_model(X_train, y_train)
 
@@ -123,7 +112,6 @@ def main(args):
 
     print("Model training completed and saved.")
 
-# -------------------- Argument Parser --------------------
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
