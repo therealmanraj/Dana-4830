@@ -1,28 +1,40 @@
+# train.py
 import argparse
 import os
 import pandas as pd
 import numpy as np
-from sklearn.linear_model import LinearRegression
-import xgboost as xgb
-from sklearn.metrics import mean_squared_error, mean_absolute_error
 import joblib
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, mean_absolute_error
+import xgboost as xgb
+import boto3
+import io
 
-def compute_metrics(test_data, forecast_mean):
-    mae = mean_absolute_error(test_data, forecast_mean)
-    mse = mean_squared_error(test_data, forecast_mean)
-    rmse = np.sqrt(mse)
-    return {"mae": mae, "mse": mse, "rmse": rmse}
+import warnings
+warnings.filterwarnings("ignore")
+np.random.seed(42)
+
+# -------------------- Data Processing Functions --------------------
+def transform_data(df):
+    df.columns = df.columns.str.replace(r"^b'|'$|\[.*?\]", "", regex=True)
+    df = df.loc[df['Environment:Site Day Type Index'] != 0]
+    df["HVAC_kWh"] = df["Electricity:HVAC"] * 2.77778e-7
+    df.drop(columns='Electricity:HVAC', inplace=True)
+    occupant_cols = [col for col in df.columns if 'Occupant' in col]
+    df["TotalOccCount"] = df[occupant_cols].sum(axis=1)
+    df.drop(columns=occupant_cols, inplace=True)
+    df.index = pd.date_range(start="2004-01-01 00:00:00", periods=len(df), freq="10min")
+    return df
 
 def add_lags(df):
     for col in df.columns:
         target_map = df[col].to_dict()
-        df[f'{col}_lag1'] = (df.index - pd.Timedelta('7 days')).map(target_map)
-        df[f'{col}_lag2'] = (df.index - pd.Timedelta('14 days')).map(target_map)
-        df[f'{col}_lag3'] = (df.index - pd.Timedelta('21 days')).map(target_map)
+        df[f'{col}_lag1'] = (df.index - pd.Timedelta('1 days')).map(target_map)
+        df[f'{col}_lag2'] = (df.index - pd.Timedelta('3 days')).map(target_map)
+        df[f'{col}_lag3'] = (df.index - pd.Timedelta('7 days')).map(target_map)
     return df
 
 def create_features(df):
-    df = df.copy()
     df['hour'] = df.index.hour
     df['dayofweek'] = df.index.dayofweek
     df['month'] = df.index.month
@@ -31,40 +43,20 @@ def create_features(df):
     df['weekofyear'] = df.index.isocalendar().week
     return df
 
-def train_model(data_path, model_output_dir):
-    # Load data
-    hvac_data = pd.read_csv(data_path)
-    hvac_data.columns = hvac_data.columns.str.replace(r"^b'|'$|\\[.*?\\]", "", regex=True)
-    hvac_data = hvac_data.loc[hvac_data['Environment:Site Day Type Index'] != 0]
-    hvac_data["HVAC_kWh"] = hvac_data["Electricity:HVAC"] * 2.77778e-7
-    hvac_data.drop(columns='Electricity:HVAC', axis=1, inplace=True)
+# -------------------- Training Functions --------------------
+def compute_metrics(actual, predicted):
+    return {
+        "mae": mean_absolute_error(actual, predicted),
+        "mse": mean_squared_error(actual, predicted),
+        "rmse": np.sqrt(mean_squared_error(actual, predicted))
+    }
 
-    occupant_cols = [col for col in hvac_data.columns if 'Occupant' in col]
-    hvac_data["TotalOccCount"] = hvac_data[occupant_cols].sum(axis=1)
-    hvac_data.drop(columns=occupant_cols, axis=1, inplace=True)
-
-    lenOfData = len(hvac_data)
-    hvac_data.index = pd.date_range(start="2004-01-01 00:00:00", periods=lenOfData, freq="10min")
-
-    hvac_data = add_lags(hvac_data)
-    hvac_data = create_features(hvac_data)
-
-    features = [col for col in hvac_data.columns if '_lag' in col]
-    features += ['hour', 'dayofweek', 'month', 'year', 'dayofmonth', 'weekofyear']
-    target = 'HVAC_kWh'
-
-    hvac_data = hvac_data[features + [target]]
-
-    x_train = hvac_data[features][hvac_data.index.month < 10].bfill()
-    y_train = hvac_data[target][hvac_data.index.month < 10]
-
-    # Linear regression
+def train_model(X_train, y_train):
     lin_reg = LinearRegression()
-    lin_reg.fit(x_train, y_train)
+    lin_reg.fit(X_train, y_train)
 
-    y_train_residuals = y_train - pd.Series(lin_reg.predict(x_train), index=x_train.index)
-
-    xgb_model = xgb.XGBRegressor(
+    residuals = y_train - lin_reg.predict(X_train)
+    xgb_reg = xgb.XGBRegressor(
         base_score=0.5,
         booster='gbtree',
         n_estimators=200,
@@ -72,17 +64,71 @@ def train_model(data_path, model_output_dir):
         max_depth=5,
         learning_rate=0.05
     )
-    xgb_model.fit(x_train, y_train_residuals)
+    xgb_reg.fit(X_train, residuals, verbose=100)
+    return lin_reg, xgb_reg
 
-    os.makedirs(model_output_dir, exist_ok=True)
-    joblib.dump(lin_reg, os.path.join(model_output_dir, "lin_reg_model.joblib"))
-    joblib.dump(xgb_model, os.path.join(model_output_dir, "xgb_model.joblib"))
-    joblib.dump(features, os.path.join(model_output_dir, "features.joblib"))
+# -------------------- Main Entry Point --------------------
+def main(args):
+    print("Loading data...")
+    # if args.data_path.startswith("s3://"):
+        
+    #     s3 = boto3.client("s3", region_name="ca-central-1")
+    #     bucket_name = "dana-minicapstone-ca"
+    #     key = args.data_path.split(f"s3://{bucket_name}/data/hvac_model_zones.csv")[-1]
+    #     obj = s3.get_object(Bucket=bucket_name, Key=key)
+    #     df = pd.read_csv(io.BytesIO(obj['Body'].read()))
+    # else:
+    #     df = pd.read_csv(args.data_path)
+    
+    region = 'ca-central-1'
+    s3_bucket = 'dana-minicapstone-ca'
+    
+    s3_key = 'data/hvac_model_zones.csv'
+    
+    s3 = boto3.client('s3', region_name=region)
+    
+    response = s3.get_object(Bucket=s3_bucket, Key=s3_key)
+    df = pd.read_csv(response['Body'])
+        
+    df = transform_data(df)
+    df = add_lags(df)
+    df = create_features(df)
+    df = df.bfill()
 
+    features = ['weekofyear','hour','dayofmonth','month',
+                'HVAC_kWh_lag3','TotalOccCount_lag3','TotalOccCount_lag2',
+                'TotalOccCount_lag1','Environment:Site Day Type Index_lag1',
+                'Environment:Site Outdoor Air Drybulb Temperature_lag2',
+                'Environment:Site Outdoor Air Drybulb Temperature_lag1',
+                'Environment:Site Outdoor Air Wetbulb Temperature_lag1',
+                'Environment:Site Outdoor Air Wetbulb Temperature_lag3',
+                'HVAC_kWh_lag1','HVAC_kWh_lag2']
+
+    target = 'HVAC_kWh'
+
+    X = df[features]
+    y = df[target]
+
+    print("Splitting data...")
+    X_train = X[df.index.month <= 11]
+    y_train = y[df.index.month <= 11]
+
+    print("Training model...")
+    lin_reg_model, xgb_model = train_model(X_train, y_train)
+
+    print("Saving models...")
+    os.makedirs(args.model_dir, exist_ok=True)
+    joblib.dump(lin_reg_model, os.path.join(args.model_dir, 'lin_reg_model.pkl'))
+    joblib.dump(xgb_model, os.path.join(args.model_dir, 'xgb_model.pkl'))
+
+    print("Model training completed and saved.")
+
+# -------------------- Argument Parser --------------------
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_path', type=str, required=True)
-    parser.add_argument('--model_output_dir', type=str, required=True)
-    args = parser.parse_args()
 
-    train_model(args.data_path, args.model_output_dir)
+    # parser.add_argument('--data_path', type=str, default='/opt/ml/input/data/train/hvac_model_zones.csv')
+    parser.add_argument('--model-dir', type=str, default=os.environ.get('SM_MODEL_DIR', './model'))
+
+    args = parser.parse_args()
+    main(args)

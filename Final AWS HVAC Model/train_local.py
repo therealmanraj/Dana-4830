@@ -1,31 +1,38 @@
-import argparse
-import os
+# train_local.py
 import pandas as pd
 import numpy as np
-from sklearn.linear_model import LinearRegression
-import xgboost as xgb
-from sklearn.metrics import mean_squared_error, mean_absolute_error
-import joblib
 import matplotlib.pyplot as plt
 import seaborn as sns
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_absolute_error, mean_squared_error
+import xgboost as xgb
+import warnings
 
-def compute_metrics(test_data, forecast_mean):
-    mae = mean_absolute_error(test_data, forecast_mean)
-    mse = mean_squared_error(test_data, forecast_mean)
-    rmse = np.sqrt(mse)
-    return {"mae": mae, "mse": mse, "rmse": rmse}
+warnings.filterwarnings("ignore")
+np.random.seed(42)
+pd.set_option('display.max_columns', None)
+
+# -------------------- Functions --------------------
+def transform_data(df):
+    df.columns = df.columns.str.replace(r"^b'|'$|\[.*?\]", "", regex=True)
+    df = df.loc[df['Environment:Site Day Type Index'] != 0]
+    df["HVAC_kWh"] = df["Electricity:HVAC"] * 2.77778e-7
+    df.drop(columns='Electricity:HVAC', inplace=True)
+    occupant_cols = [col for col in df.columns if 'Occupant' in col]
+    df["TotalOccCount"] = df[occupant_cols].sum(axis=1)
+    df.drop(columns=occupant_cols, inplace=True)
+    df.index = pd.date_range(start="2004-01-01 00:00:00", periods=len(df), freq="10min")
+    return df
 
 def add_lags(df):
     for col in df.columns:
-        if df[col].dtype.kind in 'biufc':
-            target_map = df[col].to_dict()
-            for lag in [7, 14, 21]:
-                lag_col = f'{col}_lag{lag}'
-                df[lag_col] = (df.index - pd.Timedelta(f'{lag} days')).map(target_map)
-    return df.copy()
+        target_map = df[col].to_dict()
+        df[f'{col}_lag1'] = (df.index - pd.Timedelta('1 days')).map(target_map)
+        df[f'{col}_lag2'] = (df.index - pd.Timedelta('3 days')).map(target_map)
+        df[f'{col}_lag3'] = (df.index - pd.Timedelta('7 days')).map(target_map)
+    return df
 
 def create_features(df):
-    df = df.copy()
     df['hour'] = df.index.hour
     df['dayofweek'] = df.index.dayofweek
     df['month'] = df.index.month
@@ -34,102 +41,78 @@ def create_features(df):
     df['weekofyear'] = df.index.isocalendar().week
     return df
 
-def prepare_data(filepath):
-    df = pd.read_csv(filepath)
-    df.columns = df.columns.str.replace(r"^b'|'$|\[.*?\]", "", regex=True)
-    if 'Environment:Site Day Type Index' in df.columns:
-        df = df.loc[df['Environment:Site Day Type Index'] != 0]
-    df['HVAC_kWh'] = df['Electricity:HVAC'] * 2.77778e-7
-    df.drop(columns='Electricity:HVAC', inplace=True)
+def compute_metrics(actual, predicted):
+    return {
+        "mae": mean_absolute_error(actual, predicted),
+        "mse": mean_squared_error(actual, predicted),
+        "rmse": np.sqrt(mean_squared_error(actual, predicted))
+    }
 
-    occ_cols = [col for col in df.columns if 'Occupant' in col]
-    df['TotalOccCount'] = df[occ_cols].sum(axis=1)
-    df.drop(columns=occ_cols, inplace=True)
-
-    df.index = pd.date_range(start="2004-01-01 00:00:00", periods=len(df), freq="10min")
-    df = add_lags(df)
-    df = create_features(df)
-    return df
-
-def plot_predictions(df, title):
+def plot_results(y_true, y_pred):
     plt.figure(figsize=(15, 5))
-    sns.lineplot(x=df.index, y=df['HVAC_kWh'], label='Actual')
-    sns.lineplot(x=df.index, y=df['Predicted_HVAC_kWh'], label='Predicted', dashes=(4, 2))
-    plt.title(title)
+    sns.lineplot(x=y_true.index, y=y_true, label="Actual")
+    sns.lineplot(x=y_pred.index, y=y_pred, label="Predicted", dashes=(4,2))
+    plt.title("HVAC Energy Consumption")
     plt.legend()
     plt.tight_layout()
     plt.show()
 
-def train_and_predict(filepath, model_output_dir):
-    df = prepare_data(filepath)
+# -------------------- Main --------------------
+def main():
+    df = pd.read_csv("hvac_model_zones.csv")
+    df = transform_data(df)
+    df = add_lags(df)
+    df = create_features(df)
+    df = df.bfill()
+
+    features = ['weekofyear','hour','dayofmonth','month',
+                'HVAC_kWh_lag3','TotalOccCount_lag3','TotalOccCount_lag2',
+                'TotalOccCount_lag1','Environment:Site Day Type Index_lag1',
+                'Environment:Site Outdoor Air Drybulb Temperature_lag2',
+                'Environment:Site Outdoor Air Drybulb Temperature_lag1',
+                'Environment:Site Outdoor Air Wetbulb Temperature_lag1',
+                'Environment:Site Outdoor Air Wetbulb Temperature_lag3',
+                'HVAC_kWh_lag1','HVAC_kWh_lag2']
     target = 'HVAC_kWh'
-    features = [col for col in df.columns if col != target]
 
-    train_mask = df.index.month < 10
-    val_mask = (df.index.month >= 10) & (df.index.month <= 11)
-    test_mask = (df.index.month > 11) & (df.index.month <= 12)
+    X = df[features]
+    y = df[target]
 
-    x_train, y_train = df[features][train_mask].bfill(), df[target][train_mask]
-    x_val, y_val = df[features][val_mask], df[target][val_mask]
-    x_test, y_test = df[features][test_mask], df[target][test_mask]
+    X_train = X[df.index.month <= 11]
+    y_train = y[df.index.month <= 11]
+    X_test = X[df.index.month == 12]
+    y_test = y[df.index.month == 12]
 
+    # Train hybrid model
     lin_reg = LinearRegression()
-    lin_reg.fit(x_train, y_train)
-    y_train_res = y_train - lin_reg.predict(x_train)
+    lin_reg.fit(X_train, y_train)
 
-    xgb_model = xgb.XGBRegressor(base_score=0.5, booster='gbtree', n_estimators=200,
-                                 objective='reg:squarederror', max_depth=5, learning_rate=0.05)
-    xgb_model.fit(x_train, y_train_res, verbose=100)
+    residuals = y_train - lin_reg.predict(X_train)
 
-    y_pred_combined = lin_reg.predict(x_val) + xgb_model.predict(x_val)
-    val_results = df[val_mask].copy()
-    val_results['Predicted_HVAC_kWh'] = y_pred_combined
-    plot_predictions(val_results, "Validation: HVAC Energy Consumption by Hour")
-    print("Validation Metrics:", compute_metrics(y_val, y_pred_combined))
+    xgb_model = xgb.XGBRegressor(
+        base_score=0.5,
+        booster='gbtree',
+        n_estimators=200,
+        objective='reg:squarederror',
+        max_depth=5,
+        learning_rate=0.05
+    )
+    xgb_model.fit(X_train, residuals)
 
-    top_features = pd.Series(xgb_model.feature_importances_, index=x_train.columns)
-    top_15 = top_features.sort_values(ascending=False).head(15).index.tolist()
+    # Predict
+    y_pred_lin = lin_reg.predict(X_test)
+    y_pred_xgb = xgb_model.predict(X_test)
+    y_pred_combined = y_pred_lin + y_pred_xgb
+    y_pred_combined = pd.Series(y_pred_combined, index=X_test.index)
 
-    lin_reg.fit(x_train[top_15], y_train)
-    y_train_res = y_train - lin_reg.predict(x_train[top_15])
-    xgb_model.fit(x_train[top_15], y_train_res, verbose=100)
+    # Metrics
+    metrics = compute_metrics(y_test, y_pred_combined)
+    print("Evaluation Metrics:")
+    for k, v in metrics.items():
+        print(f"{k.upper()}: {v:.4f}")
 
-    y_pred_combined = lin_reg.predict(x_val[top_15]) + xgb_model.predict(x_val[top_15])
-    val_results['Predicted_HVAC_kWh'] = y_pred_combined
-    plot_predictions(val_results, "Validation (Top 15 Features): HVAC Energy Consumption by Hour")
-    print("Top 15 Feature Validation Metrics:", compute_metrics(y_val, y_pred_combined))
-
-    if len(x_test) == 0:
-        print("Warning: No future test data available for forecasting.")
-        return
-
-    forecast_index = pd.date_range(x_test.index.min(), x_test.index.max(), freq='10min')
-    forecast_df = pd.DataFrame(index=forecast_index)
-    forecast_df['HVAC_kWh'] = np.nan
-
-    future_source = df.drop(columns=['HVAC_kWh'])
-    combined = pd.concat([future_source, forecast_df], axis=0)
-    combined = add_lags(combined)
-    combined = create_features(combined)
-
-    future_only = combined.loc[forecast_index].copy()
-    future_only = future_only.dropna(subset=[col for col in top_15 if col in future_only.columns])
-
-    # Fill any missing top_15 columns with 0 to avoid KeyError
-    for col in top_15:
-        if col not in future_only.columns:
-            future_only[col] = 0
-
-    y_pred_combined = lin_reg.predict(future_only[top_15]) + xgb_model.predict(future_only[top_15])
-    future_result = pd.DataFrame(index=future_only.index)
-    future_result['HVAC_kWh'] = np.nan
-    future_result['Predicted_HVAC_KWh'] = y_pred_combined
-    plot_predictions(future_result, "Forecasted HVAC Energy Consumption by Hour")
-    print("Forecast Metrics:", compute_metrics(y_test[:len(future_result)], y_pred_combined))
+    # Plot
+    plot_results(y_test, y_pred_combined)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--data_path', type=str, required=True)
-    parser.add_argument('--model_output_dir', type=str, required=True)
-    args = parser.parse_args()
-    train_and_predict(args.data_path, args.model_output_dir)
+    main()
