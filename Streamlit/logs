@@ -1,0 +1,147 @@
+Step 1. Prepare Your Application
+Create a Virtual Environment (Optional but Recommended):
+In your project folder, run:
+
+bash
+Copy
+python3 -m venv venv
+source venv/bin/activate
+Create requirements.txt:
+List your Python dependencies. For example:
+
+nginx
+Copy
+streamlit
+boto3
+pandas
+plotly
+Create Your Dockerfile:
+Place this file in the root of your project (the same folder as your app.py). For example:
+
+dockerfile
+Copy
+
+# Use an official Python runtime as a base image
+
+FROM python:3.11-slim
+
+# Update system packages
+
+RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/\*
+
+# Set the working directory in the container
+
+WORKDIR /app
+
+# Copy the requirements file into the container
+
+COPY requirements.txt .
+
+# Install dependencies
+
+RUN pip install --upgrade pip && pip install -r requirements.txt
+
+# Copy the rest of your application code
+
+COPY . .
+
+# Expose port 8080 (Elastic Beanstalk’s default for containerized web apps)
+
+EXPOSE 8080
+
+# Run the Streamlit app with CORS disabled and on port 8080
+
+CMD ["streamlit", "run", "app.py", "--server.port=8080", "--server.enableCORS=false"]
+Verify Your App Locally with Docker (Optional):
+Build your Docker image and run it locally to ensure everything works:
+
+bash
+Copy
+docker build -t my-streamlit-app .
+docker run -p 8080:8080 my-streamlit-app
+Then, open your browser at http://localhost:8080 to test.
+
+Step 2. Configure Elastic Beanstalk (EB CLI Setup)
+Install the EB CLI:
+For macOS:
+
+bash
+Copy
+brew install awsebcli
+For other platforms, follow the AWS EB CLI installation guide.
+
+Initialize Your EB Application:
+In your project directory, run:
+
+bash
+Copy
+eb init
+When prompted for the application name, use (for example) energyDashboard.
+
+Select your AWS region (e.g., ca-central-1).
+
+Choose Docker as your platform.
+
+Complete the prompts (you can skip CodeCommit and choose SSH if needed for debugging).
+
+Confirm Environment Permissions:
+Make sure your IAM user and the Elastic Beanstalk EC2 instance role have the necessary permissions, especially:
+
+For Elastic Beanstalk actions (e.g., CreateApplication, CreateEnvironment, etc.)
+
+For EC2 actions (e.g., ec2:GetSecurityGroupsForVpc)
+
+For S3 access on your specific bucket (s3:GetObject on arn:aws:s3:::dana-minicapstone-ca/incoming/_ and /predictions/_)
+
+Step 3. Create and Deploy the Environment
+Create the Environment:
+Run the following command. (Since EB shows the platform as “docker”, simply specify that.)
+
+bash
+Copy
+eb create my-streamlit-env --platform docker
+If an environment with this name already exists and you want to update it instead, use:
+
+bash
+Copy
+eb deploy my-streamlit-env
+Monitor the Deployment:
+The EB CLI will upload your source bundle and attempt to create the environment. You’ll see status messages similar to:
+
+Creating security groups
+
+Configuring load balancers, auto scaling, etc.
+
+Deployments errors will be logged (if any, check with eb logs).
+
+Wait for Completion:
+When the deployment process finishes successfully, you will see details including the environment's CNAME (public URL). For example:
+
+makefile
+Copy
+CNAME: my-streamlit-env.eba-XXXXXX.ca-central-1.elasticbeanstalk.com
+Use this URL to access your application.
+
+Step 4. Verify and Monitor Your Application
+Open the Public URL:
+Navigate in your browser to:
+
+arduino
+Copy
+http://my-streamlit-env.eba-XXXXXX.ca-central-1.elasticbeanstalk.com/
+Your Streamlit dashboard should load without errors.
+
+Troubleshooting:
+If you see errors (for example, S3 access issues), verify your IAM policies:
+
+Confirm the instance role (e.g., aws-elasticbeanstalk-ec2-role) has a policy granting S3 GetObject on dana-minicapstone-ca/incoming/_ and /predictions/_.
+
+Update the policy if needed and then redeploy your application if corrections are made.
+
+Logging:
+Use:
+
+bash
+Copy
+eb logs
+to retrieve logs from your environment for further debugging if required.
