@@ -2,3 +2,4 @@ streamlit
 boto3
 pandas
 plotly
+cat <<EOF > requirements.txt
