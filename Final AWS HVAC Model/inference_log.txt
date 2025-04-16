@@ -1,0 +1,162 @@
+2025-04-15 15:18:26,360 - INFO - Using model directory: ./model
+2025-04-15 15:18:26,459 - INFO - Loaded Linear Regression model.
+2025-04-15 15:18:26,546 - INFO - Loaded XGBoost model.
+2025-04-15 15:19:52,205 - INFO - Using model directory: ./model
+2025-04-15 15:19:52,313 - INFO - Loaded Linear Regression model.
+2025-04-15 15:19:52,377 - INFO - Loaded XGBoost model.
+2025-04-15 15:20:44,470 - INFO - Using model directory: ./model
+2025-04-15 15:20:44,572 - INFO - Loaded Linear Regression model.
+2025-04-15 15:20:44,624 - INFO - Loaded XGBoost model.
+2025-04-15 15:20:59,347 - ERROR - Error during prediction: 'numpy.ndarray' object has no attribute 'predict'
+2025-04-15 15:21:50,164 - INFO - Using model directory: ./model
+2025-04-15 15:21:50,276 - INFO - Loaded Linear Regression model.
+2025-04-15 15:21:50,332 - INFO - Loaded XGBoost model.
+2025-04-15 15:22:09,526 - ERROR - Error during prediction: 'numpy.ndarray' object has no attribute 'predict'
+2025-04-15 15:23:45,126 - INFO - Using model directory: ./model
+2025-04-15 15:23:45,266 - INFO - Loaded Linear Regression model.
+2025-04-15 15:23:45,343 - INFO - Loaded XGBoost model.
+2025-04-15 15:23:59,877 - ERROR - Error during prediction: 'numpy.ndarray' object has no attribute 'predict'
+2025-04-15 15:34:46,474 - INFO - Using model directory: ./model
+2025-04-15 15:34:46,584 - ERROR - Error loading lin_reg_model.pkl: Loaded linear model is not valid
+2025-04-15 15:37:14,203 - INFO - Using model directory: ./model
+2025-04-15 15:37:35,938 - ERROR - Error during prediction: Input X contains NaN.
+LinearRegression does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifier and Regressor which accept missing values encoded as NaNs natively. Alternatively, it is possible to preprocess the data, for instance by using an imputer transformer in a pipeline or drop samples with missing values. See https://scikit-learn.org/stable/modules/impute.html You can find a list of all estimators that handle NaN values at the following page: https://scikit-learn.org/stable/modules/impute.html#estimators-that-handle-nan-values
+2025-04-15 15:38:42,045 - INFO - Using model directory: ./model
+2025-04-15 15:39:02,179 - ERROR - Error during prediction: Input X contains NaN.
+LinearRegression does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifier and Regressor which accept missing values encoded as NaNs natively. Alternatively, it is possible to preprocess the data, for instance by using an imputer transformer in a pipeline or drop samples with missing values. See https://scikit-learn.org/stable/modules/impute.html You can find a list of all estimators that handle NaN values at the following page: https://scikit-learn.org/stable/modules/impute.html#estimators-that-handle-nan-values
+2025-04-15 15:39:27,104 - INFO - Using model directory: ./model
+2025-04-15 15:39:40,227 - ERROR - Error during prediction: Input X contains NaN.
+LinearRegression does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifier and Regressor which accept missing values encoded as NaNs natively. Alternatively, it is possible to preprocess the data, for instance by using an imputer transformer in a pipeline or drop samples with missing values. See https://scikit-learn.org/stable/modules/impute.html You can find a list of all estimators that handle NaN values at the following page: https://scikit-learn.org/stable/modules/impute.html#estimators-that-handle-nan-values
+2025-04-15 15:40:18,546 - INFO - Using model directory: ./model
+2025-04-15 15:40:39,428 - INFO - Inference completed successfully.
+2025-04-15 15:43:27,587 - INFO - Using model directory: ./model
+2025-04-15 15:43:49,037 - INFO - Inference completed successfully.
+2025-04-15 15:44:35,041 - INFO - Using model directory: ./model
+2025-04-15 15:44:56,196 - INFO - Inference completed successfully.
+2025-04-15 15:44:56,922 - INFO - Uploaded log file to s3://dana-minicapstone-ca/logs/inference_logs/inference_log_20250415-154456.txt
+2025-04-15 15:50:17,452 - INFO - Using model directory: ./model
+2025-04-15 15:50:17,452 - INFO - Using model directory: ./model
+2025-04-15 15:50:17,452 - INFO - Using model directory: ./model
+2025-04-15 15:50:33,742 - INFO - Inference completed successfully.
+2025-04-15 15:50:33,742 - INFO - Inference completed successfully.
+2025-04-15 15:50:33,742 - INFO - Inference completed successfully.
+2025-04-15 15:50:34,433 - INFO - Uploaded log file to s3://dana-minicapstone-ca/logs/inference_logs/inference_log_20250415-155033.txt
+2025-04-15 15:50:34,433 - INFO - Uploaded log file to s3://dana-minicapstone-ca/logs/inference_logs/inference_log_20250415-155033.txt
+2025-04-15 15:50:34,433 - INFO - Uploaded log file to s3://dana-minicapstone-ca/logs/inference_logs/inference_log_20250415-155033.txt
+2025-04-15 15:51:02,259 - INFO - Using model directory: ./model
+2025-04-15 15:51:02,259 - INFO - Using model directory: ./model
+2025-04-15 15:51:02,259 - INFO - Using model directory: ./model
+2025-04-15 15:51:02,259 - INFO - Using model directory: ./model
+2025-04-15 15:51:17,496 - INFO - Inference completed successfully.
+2025-04-15 15:51:17,496 - INFO - Inference completed successfully.
+2025-04-15 15:51:17,496 - INFO - Inference completed successfully.
+2025-04-15 15:51:17,496 - INFO - Inference completed successfully.
+2025-04-15 15:51:18,185 - INFO - Uploaded log file to s3://dana-minicapstone-ca/logs/inference_logs/inference_log_20250415-155117.txt
+2025-04-15 15:51:18,185 - INFO - Uploaded log file to s3://dana-minicapstone-ca/logs/inference_logs/inference_log_20250415-155117.txt
+2025-04-15 15:51:18,185 - INFO - Uploaded log file to s3://dana-minicapstone-ca/logs/inference_logs/inference_log_20250415-155117.txt
+2025-04-15 15:51:18,185 - INFO - Uploaded log file to s3://dana-minicapstone-ca/logs/inference_logs/inference_log_20250415-155117.txt
+2025-04-15 15:54:17,681 - INFO - Using model directory: ./model
+2025-04-15 15:54:17,681 - INFO - Using model directory: ./model
+2025-04-15 15:54:17,681 - INFO - Using model directory: ./model
+2025-04-15 15:54:17,681 - INFO - Using model directory: ./model
+2025-04-15 15:54:17,681 - INFO - Using model directory: ./model
+2025-04-15 15:54:32,318 - ERROR - Error during prediction: Input X contains NaN.
+LinearRegression does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifier and Regressor which accept missing values encoded as NaNs natively. Alternatively, it is possible to preprocess the data, for instance by using an imputer transformer in a pipeline or drop samples with missing values. See https://scikit-learn.org/stable/modules/impute.html You can find a list of all estimators that handle NaN values at the following page: https://scikit-learn.org/stable/modules/impute.html#estimators-that-handle-nan-values
+2025-04-15 15:54:32,318 - ERROR - Error during prediction: Input X contains NaN.
+LinearRegression does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifier and Regressor which accept missing values encoded as NaNs natively. Alternatively, it is possible to preprocess the data, for instance by using an imputer transformer in a pipeline or drop samples with missing values. See https://scikit-learn.org/stable/modules/impute.html You can find a list of all estimators that handle NaN values at the following page: https://scikit-learn.org/stable/modules/impute.html#estimators-that-handle-nan-values
+2025-04-15 15:54:32,318 - ERROR - Error during prediction: Input X contains NaN.
+LinearRegression does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifier and Regressor which accept missing values encoded as NaNs natively. Alternatively, it is possible to preprocess the data, for instance by using an imputer transformer in a pipeline or drop samples with missing values. See https://scikit-learn.org/stable/modules/impute.html You can find a list of all estimators that handle NaN values at the following page: https://scikit-learn.org/stable/modules/impute.html#estimators-that-handle-nan-values
+2025-04-15 15:54:32,318 - ERROR - Error during prediction: Input X contains NaN.
+LinearRegression does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifier and Regressor which accept missing values encoded as NaNs natively. Alternatively, it is possible to preprocess the data, for instance by using an imputer transformer in a pipeline or drop samples with missing values. See https://scikit-learn.org/stable/modules/impute.html You can find a list of all estimators that handle NaN values at the following page: https://scikit-learn.org/stable/modules/impute.html#estimators-that-handle-nan-values
+2025-04-15 15:54:32,318 - ERROR - Error during prediction: Input X contains NaN.
+LinearRegression does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifier and Regressor which accept missing values encoded as NaNs natively. Alternatively, it is possible to preprocess the data, for instance by using an imputer transformer in a pipeline or drop samples with missing values. See https://scikit-learn.org/stable/modules/impute.html You can find a list of all estimators that handle NaN values at the following page: https://scikit-learn.org/stable/modules/impute.html#estimators-that-handle-nan-values
+2025-04-15 15:55:00,461 - INFO - Using model directory: ./model
+2025-04-15 15:55:00,461 - INFO - Using model directory: ./model
+2025-04-15 15:55:00,461 - INFO - Using model directory: ./model
+2025-04-15 15:55:00,461 - INFO - Using model directory: ./model
+2025-04-15 15:55:00,461 - INFO - Using model directory: ./model
+2025-04-15 15:55:00,461 - INFO - Using model directory: ./model
+2025-04-15 15:55:15,988 - INFO - Inference completed successfully.
+2025-04-15 15:55:15,988 - INFO - Inference completed successfully.
+2025-04-15 15:55:15,988 - INFO - Inference completed successfully.
+2025-04-15 15:55:15,988 - INFO - Inference completed successfully.
+2025-04-15 15:55:15,988 - INFO - Inference completed successfully.
+2025-04-15 15:55:15,988 - INFO - Inference completed successfully.
+2025-04-15 15:55:16,706 - INFO - Uploaded log file to s3://dana-minicapstone-ca/logs/inference_logs/inference_log_20250415-155516.txt
+2025-04-15 15:55:16,706 - INFO - Uploaded log file to s3://dana-minicapstone-ca/logs/inference_logs/inference_log_20250415-155516.txt
+2025-04-15 15:55:16,706 - INFO - Uploaded log file to s3://dana-minicapstone-ca/logs/inference_logs/inference_log_20250415-155516.txt
+2025-04-15 15:55:16,706 - INFO - Uploaded log file to s3://dana-minicapstone-ca/logs/inference_logs/inference_log_20250415-155516.txt
+2025-04-15 15:55:16,706 - INFO - Uploaded log file to s3://dana-minicapstone-ca/logs/inference_logs/inference_log_20250415-155516.txt
+2025-04-15 15:55:16,706 - INFO - Uploaded log file to s3://dana-minicapstone-ca/logs/inference_logs/inference_log_20250415-155516.txt
+2025-04-15 15:57:16,988 - INFO - Using model directory: ./model
+2025-04-15 15:57:16,988 - INFO - Using model directory: ./model
+2025-04-15 15:57:16,988 - INFO - Using model directory: ./model
+2025-04-15 15:57:16,988 - INFO - Using model directory: ./model
+2025-04-15 15:57:16,988 - INFO - Using model directory: ./model
+2025-04-15 15:57:16,988 - INFO - Using model directory: ./model
+2025-04-15 15:57:16,988 - INFO - Using model directory: ./model
+2025-04-15 15:57:36,700 - INFO - Inference completed successfully.
+2025-04-15 15:57:36,700 - INFO - Inference completed successfully.
+2025-04-15 15:57:36,700 - INFO - Inference completed successfully.
+2025-04-15 15:57:36,700 - INFO - Inference completed successfully.
+2025-04-15 15:57:36,700 - INFO - Inference completed successfully.
+2025-04-15 15:57:36,700 - INFO - Inference completed successfully.
+2025-04-15 15:57:36,700 - INFO - Inference completed successfully.
+2025-04-15 15:57:37,780 - INFO - Uploaded log file to s3://dana-minicapstone-ca/logs/inference_logs/inference_log_20250415-155736.txt
+2025-04-15 15:57:37,780 - INFO - Uploaded log file to s3://dana-minicapstone-ca/logs/inference_logs/inference_log_20250415-155736.txt
+2025-04-15 15:57:37,780 - INFO - Uploaded log file to s3://dana-minicapstone-ca/logs/inference_logs/inference_log_20250415-155736.txt
+2025-04-15 15:57:37,780 - INFO - Uploaded log file to s3://dana-minicapstone-ca/logs/inference_logs/inference_log_20250415-155736.txt
+2025-04-15 15:57:37,780 - INFO - Uploaded log file to s3://dana-minicapstone-ca/logs/inference_logs/inference_log_20250415-155736.txt
+2025-04-15 15:57:37,780 - INFO - Uploaded log file to s3://dana-minicapstone-ca/logs/inference_logs/inference_log_20250415-155736.txt
+2025-04-15 15:57:37,780 - INFO - Uploaded log file to s3://dana-minicapstone-ca/logs/inference_logs/inference_log_20250415-155736.txt
+2025-04-15 15:58:11,450 - INFO - Using model directory: ./model
+2025-04-15 15:58:11,450 - INFO - Using model directory: ./model
+2025-04-15 15:58:11,450 - INFO - Using model directory: ./model
+2025-04-15 15:58:11,450 - INFO - Using model directory: ./model
+2025-04-15 15:58:11,450 - INFO - Using model directory: ./model
+2025-04-15 15:58:11,450 - INFO - Using model directory: ./model
+2025-04-15 15:58:11,450 - INFO - Using model directory: ./model
+2025-04-15 15:58:11,450 - INFO - Using model directory: ./model
+2025-04-15 15:58:32,332 - INFO - Inference completed successfully.
+2025-04-15 15:58:32,332 - INFO - Inference completed successfully.
+2025-04-15 15:58:32,332 - INFO - Inference completed successfully.
+2025-04-15 15:58:32,332 - INFO - Inference completed successfully.
+2025-04-15 15:58:32,332 - INFO - Inference completed successfully.
+2025-04-15 15:58:32,332 - INFO - Inference completed successfully.
+2025-04-15 15:58:32,332 - INFO - Inference completed successfully.
+2025-04-15 15:58:32,332 - INFO - Inference completed successfully.
+2025-04-15 15:58:33,115 - INFO - Uploaded log file to s3://dana-minicapstone-ca/logs/inference_logs/inference_log_20250415-155832.txt
+2025-04-15 15:58:33,115 - INFO - Uploaded log file to s3://dana-minicapstone-ca/logs/inference_logs/inference_log_20250415-155832.txt
+2025-04-15 15:58:33,115 - INFO - Uploaded log file to s3://dana-minicapstone-ca/logs/inference_logs/inference_log_20250415-155832.txt
+2025-04-15 15:58:33,115 - INFO - Uploaded log file to s3://dana-minicapstone-ca/logs/inference_logs/inference_log_20250415-155832.txt
+2025-04-15 15:58:33,115 - INFO - Uploaded log file to s3://dana-minicapstone-ca/logs/inference_logs/inference_log_20250415-155832.txt
+2025-04-15 15:58:33,115 - INFO - Uploaded log file to s3://dana-minicapstone-ca/logs/inference_logs/inference_log_20250415-155832.txt
+2025-04-15 15:58:33,115 - INFO - Uploaded log file to s3://dana-minicapstone-ca/logs/inference_logs/inference_log_20250415-155832.txt
+2025-04-15 15:58:33,115 - INFO - Uploaded log file to s3://dana-minicapstone-ca/logs/inference_logs/inference_log_20250415-155832.txt
+2025-04-15 16:02:23,042 - INFO - Using model directory: ./model
+2025-04-15 16:02:45,881 - INFO - Inference completed successfully.
+2025-04-15 16:02:46,558 - INFO - Uploaded log file to s3://dana-minicapstone-ca/logs/inference_logs/inference_log_20250415-160245.txt
+2025-04-15 16:03:28,329 - INFO - Using model directory: ./model
+2025-04-15 16:03:49,724 - ERROR - Error during prediction: Found array with 0 sample(s) (shape=(0, 15)) while a minimum of 1 is required by LinearRegression.
+2025-04-15 16:08:08,354 - INFO - Using model directory: ./model
+2025-04-15 16:08:25,586 - ERROR - Error during prediction: Found array with 0 sample(s) (shape=(0, 15)) while a minimum of 1 is required by LinearRegression.
+2025-04-15 16:09:05,718 - INFO - Using model directory: ./model
+2025-04-15 16:09:24,465 - ERROR - Error during prediction: Found array with 0 sample(s) (shape=(0, 15)) while a minimum of 1 is required by LinearRegression.
+2025-04-15 16:12:48,514 - INFO - Using model directory: ./model
+2025-04-15 16:12:48,514 - INFO - Using model directory: ./model
+2025-04-15 16:13:10,335 - ERROR - Error during prediction: Input X contains NaN.
+LinearRegression does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifier and Regressor which accept missing values encoded as NaNs natively. Alternatively, it is possible to preprocess the data, for instance by using an imputer transformer in a pipeline or drop samples with missing values. See https://scikit-learn.org/stable/modules/impute.html You can find a list of all estimators that handle NaN values at the following page: https://scikit-learn.org/stable/modules/impute.html#estimators-that-handle-nan-values
+2025-04-15 16:13:10,335 - ERROR - Error during prediction: Input X contains NaN.
+LinearRegression does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifier and Regressor which accept missing values encoded as NaNs natively. Alternatively, it is possible to preprocess the data, for instance by using an imputer transformer in a pipeline or drop samples with missing values. See https://scikit-learn.org/stable/modules/impute.html You can find a list of all estimators that handle NaN values at the following page: https://scikit-learn.org/stable/modules/impute.html#estimators-that-handle-nan-values
+2025-04-15 16:14:12,375 - INFO - Using model directory: ./model
+2025-04-15 16:14:27,148 - ERROR - Error during prediction: Input X contains NaN.
+LinearRegression does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifier and Regressor which accept missing values encoded as NaNs natively. Alternatively, it is possible to preprocess the data, for instance by using an imputer transformer in a pipeline or drop samples with missing values. See https://scikit-learn.org/stable/modules/impute.html You can find a list of all estimators that handle NaN values at the following page: https://scikit-learn.org/stable/modules/impute.html#estimators-that-handle-nan-values
+2025-04-15 16:15:48,318 - INFO - Using model directory: ./model
+2025-04-15 16:16:05,681 - INFO - Inference completed successfully.
+2025-04-15 16:16:06,589 - INFO - Uploaded log file to s3://dana-minicapstone-ca/logs/inference_logs/inference_log_20250415-161605.txt
+2025-04-15 16:45:54,044 - INFO - Using model directory: ./model
+2025-04-15 16:49:01,505 - INFO - Using model directory: ./model
+2025-04-15 16:49:11,403 - INFO - Using model directory: ./model
+2025-04-15 16:49:43,536 - ERROR - Error during prediction: predict_future() missing 2 required positional arguments: 'xgb_reg_hybrid_lags' and 'df_and_future'
+2025-04-15 16:51:42,355 - INFO - Using model directory: ./model
+2025-04-15 16:52:14,545 - INFO - Uploaded log file to s3://dana-minicapstone-ca/logs/inference_logs/inference_log_20250415-165213.txt
