@@ -114,8 +114,7 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-
-    # parser.add_argument('--data_path', type=str, default='/opt/ml/input/data/train/hvac_model_zones.csv')
+    
     parser.add_argument('--model-dir', type=str, default=os.environ.get('SM_MODEL_DIR', './model'))
 
     args = parser.parse_args()

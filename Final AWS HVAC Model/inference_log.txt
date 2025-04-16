@@ -160,3 +160,7 @@ LinearRegression does not accept missing values encoded as NaN natively. For sup
 2025-04-15 16:49:43,536 - ERROR - Error during prediction: predict_future() missing 2 required positional arguments: 'xgb_reg_hybrid_lags' and 'df_and_future'
 2025-04-15 16:51:42,355 - INFO - Using model directory: ./model
 2025-04-15 16:52:14,545 - INFO - Uploaded log file to s3://dana-minicapstone-ca/logs/inference_logs/inference_log_20250415-165213.txt
+2025-04-15 17:04:11,997 - INFO - Using model directory: ./model
+2025-04-15 17:04:34,810 - INFO - Uploaded log file to s3://dana-minicapstone-ca/logs/inference_logs/inference_log_20250415-170434.txt
+2025-04-15 17:06:59,992 - INFO - Using model directory: ./model
+2025-04-15 17:07:26,372 - INFO - Uploaded log file to s3://dana-minicapstone-ca/logs/inference_logs/inference_log_20250415-170725.txt
