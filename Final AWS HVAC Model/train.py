@@ -38,7 +38,9 @@ def create_features(df):
     df['month'] = df.index.month
     df['year'] = df.index.year
     df['dayofmonth'] = df.index.day
-    df['weekofyear'] = df.index.isocalendar().week
+    # df['weekofyear'] = df.index.isocalendar().week
+    df['weekofyear'] = df.index.isocalendar().week.astype(int)
+    
     return df
 
 def compute_metrics(actual, predicted):
@@ -64,7 +66,7 @@ def train_model(X_train, y_train):
     xgb_reg.fit(X_train, residuals, verbose=100)
     return lin_reg, xgb_reg
 
-def main(args):
+def main():
     print("Loading data...")
     region = 'ca-central-1'
     s3_bucket = 'dana-minicapstone-ca'
@@ -106,16 +108,14 @@ def main(args):
     lin_reg_model, xgb_model = train_model(X_train, y_train)
 
     print("Saving models...")
-    os.makedirs(args.model_dir, exist_ok=True)
-    joblib.dump(lin_reg_model, os.path.join(args.model_dir, 'lin_reg_model.pkl'))
-    joblib.dump(xgb_model, os.path.join(args.model_dir, 'xgb_model.pkl'))
+    model_dir = os.environ.get("SM_MODEL_DIR", "/opt/ml/model")
+    if not os.path.exists(model_dir):
+        os.makedirs(model_dir)
+    os.makedirs(model_dir, exist_ok=True)
+    joblib.dump(lin_reg_model, os.path.join(model_dir, 'lin_reg_model.pkl'))
+    joblib.dump(xgb_model, os.path.join(model_dir, 'xgb_model.pkl'))
 
     print("Model training completed and saved.")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    
-    parser.add_argument('--model-dir', type=str, default=os.environ.get('SM_MODEL_DIR', './model'))
-
-    args = parser.parse_args()
-    main(args)
+    main()
