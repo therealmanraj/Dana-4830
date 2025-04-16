@@ -1,7 +1,0 @@
-2025-04-15 17:38:21,960 - INFO - Using model directory: /opt/ml/model
-2025-04-15 17:38:36,783 - INFO - Using model directory: ./model
-2025-04-15 17:39:22,926 - INFO - Using model directory: ./model
-2025-04-15 17:39:51,828 - INFO - Uploaded log file to s3://dana-minicapstone-ca/logs/inference_logs/inference_log_20250415-173951.txt
-2025-04-15 18:13:10,235 - INFO - Using model directory: /opt/ml/model
-2025-04-15 18:13:27,585 - INFO - Using model directory: ./model
-2025-04-15 18:13:58,048 - INFO - Uploaded log file to s3://dana-minicapstone-ca/logs/inference_logs/inference_log_20250415-181357.txt
